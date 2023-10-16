@@ -3,7 +3,7 @@
 
 import Data.Map qualified as Map
 import Data.Map.Strict (Map, empty)
-import Data.Maybe (Maybe, fromJust, fromMaybe, maybe, isNothing)
+import Data.Maybe (Maybe, fromJust, fromMaybe, isNothing, maybe)
 import Data.Text (pack, strip, unpack)
 import Text.RE.PCRE (countMatches, matches, re, (*=~), (=~))
 
@@ -19,7 +19,7 @@ turnOn :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
 turnOn coords lights = foldr (\c m -> Map.insertWith (+) c 1 m) lights coords
 
 turnOff :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
-turnOff coords lights = foldr (Map.alter (\c -> if isNothing c then Nothing else Just (max (fromJust c-1) 0))) lights coords
+turnOff coords lights = foldr (Map.alter (\c -> if isNothing c then Nothing else Just (max (fromJust c - 1) 0))) lights coords
 
 toggle :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
 toggle coords lights = foldr (\c m -> Map.insertWith (+) c 2 m) lights coords
