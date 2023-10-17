@@ -16,13 +16,13 @@ getCoords start end = [(x, y) | x <- [xStart .. xEnd], y <- [yStart .. yEnd]]
     yEnd = snd end
 
 turnOn :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
-turnOn coords lights = foldr (\c m -> Map.insertWith (+) c 1 m) lights coords
+turnOn coords lights = foldl (\m c -> Map.insertWith (+) c 1 m) lights coords
 
 turnOff :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
 turnOff coords lights = foldr (Map.alter (\c -> if isNothing c then Nothing else Just (max (fromJust c - 1) 0))) lights coords
 
 toggle :: [(Int, Int)] -> Map (Int, Int) Int -> Map (Int, Int) Int
-toggle coords lights = foldr (\c m -> Map.insertWith (+) c 2 m) lights coords
+toggle coords lights = foldl (\m c -> Map.insertWith (+) c 2 m) lights coords
 
 lightCommand :: String -> (Int, Int) -> (Int, Int) -> Map (Int, Int) Int -> Map (Int, Int) Int
 lightCommand command start end lights
