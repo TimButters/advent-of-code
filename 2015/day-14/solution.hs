@@ -22,7 +22,7 @@ runReindeer (name, speed, motion, rest) time = complete + partial
 runReindeerPerSecond :: (Int, Int, Int, Int, Int) -> Int -> (Int, Int, Int, Int, Int)
 runReindeerPerSecond (speed, motion, rest, distance, points) sec = (speed, motion, rest, distance + delta, points)
   where
-    isMoving = (sec `mod` (motion + rest)) <= motion
+    isMoving = (sec `mod` (motion + rest)) <= motion && (sec `mod` (motion + rest) /= 0)
     delta =
       if isMoving
         then speed
@@ -40,16 +40,14 @@ runReindeerInc reindeer t = Map.insert winner (speed, motion, rest, distance, po
     winner = getWinner newReindeer
     (speed, motion, rest, distance, points) = fromJust (Map.lookup winner newReindeer)
 
-runReindeerPart2 :: Map String (Int, Int, Int, Int, Int) -> Map String (Int, Int, Int, Int, Int)
-runReindeerPart2 reindeer = newReindeer
-  where
-    newReindeer = runReindeerInc reindeer 10
-
 main :: IO ()
 main = do
   input <- readFile "input.txt"
   let reindeer = map processLine $ lines input
   let distances = map (`runReindeer` 2503) reindeer
   print $ maximum distances
+
   let reindeerMap = Map.fromList $ map (\(n, s, m, r) -> (n, (s,m,r,0, 0))) reindeer
-  print $ runReindeerPart2 reindeerMap
+  --print $ foldl runReindeerInc reindeerMap [1..1000]
+  print $ foldl runReindeerInc reindeerMap [1..2503]
+  -- Rudolph 1084
