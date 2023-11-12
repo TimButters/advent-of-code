@@ -1,6 +1,6 @@
+import Data.List (maximumBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.List (maximumBy)
 import Data.Maybe (fromJust)
 
 processLine :: String -> (String, Int, Int, Int)
@@ -28,16 +28,21 @@ runReindeerPerSecond (speed, motion, rest, distance, points) sec = (speed, motio
         then speed
         else 0
 
-getWinner :: Map String (Int, Int, Int, Int, Int) -> String
-getWinner m = winner
+getWinnerByDistance :: Map String (Int, Int, Int, Int, Int) -> String
+getWinnerByDistance m = winner
   where
-    (winner, _) = maximumBy (\(k1, (_, _, _, d1, _))  (k2, (_, _, _, d2, _)) -> d1 `compare` d2) $ Map.toList m
+    (winner, _) = maximumBy (\(k1, (_, _, _, d1, _)) (k2, (_, _, _, d2, _)) -> d1 `compare` d2) $ Map.toList m
+
+getWinnerByPoints :: Map String (Int, Int, Int, Int, Int) -> (String, Int)
+getWinnerByPoints m = (winner, points)
+  where
+    (winner, (_, _, _, _, points)) = maximumBy (\(k1, (_, _, _, _, p1)) (k2, (_, _, _, _, p2)) -> p1 `compare` p2) $ Map.toList m
 
 runReindeerInc :: Map String (Int, Int, Int, Int, Int) -> Int -> Map String (Int, Int, Int, Int, Int)
 runReindeerInc reindeer t = Map.insert winner (speed, motion, rest, distance, points + 1) newReindeer
   where
     newReindeer = fmap (`runReindeerPerSecond` t) reindeer
-    winner = getWinner newReindeer
+    winner = getWinnerByDistance newReindeer
     (speed, motion, rest, distance, points) = fromJust (Map.lookup winner newReindeer)
 
 main :: IO ()
@@ -47,7 +52,5 @@ main = do
   let distances = map (`runReindeer` 2503) reindeer
   print $ maximum distances
 
-  let reindeerMap = Map.fromList $ map (\(n, s, m, r) -> (n, (s,m,r,0, 0))) reindeer
-  --print $ foldl runReindeerInc reindeerMap [1..1000]
-  print $ foldl runReindeerInc reindeerMap [1..2503]
-  -- Rudolph 1084
+  let reindeerMap = Map.fromList $ map (\(n, s, m, r) -> (n, (s, m, r, 0, 0))) reindeer
+  print $ getWinnerByPoints $ foldl runReindeerInc reindeerMap [1 .. 2503]
