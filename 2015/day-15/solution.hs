@@ -1,6 +1,3 @@
-import Data.Map (Map)
-import qualified Data.Map as Map
-
 data Ingredient = Ingredient
   { name :: String,
     capacity :: Int,
@@ -22,17 +19,25 @@ processLine s = Ingredient {name = name, capacity = capacity, durability = durab
     texture = read . init $ w !! 8 :: Int
     calories = read $ w !! 10 :: Int
 
-scoreCookie :: [Ingredient] -> [Int] -> Int
-scoreCookie ingredients portions = capacityScore * durabilityScore * flavourScore * textureScore
+scoreCookie :: [Ingredient] -> Bool -> [Int] -> Int
+scoreCookie ingredients calorieLimit portions =
+  if not calorieLimit || (totalCalories == 500)
+    then capacityScore * durabilityScore * flavourScore * textureScore
+    else 0
   where
     capacityScore = max 0 $ sum $ zipWith (*) (map capacity ingredients) portions
     durabilityScore = max 0 $ sum $ zipWith (*) (map durability ingredients) portions
     flavourScore = max 0 $ sum $ zipWith (*) (map flavour ingredients) portions
     textureScore = max 0 $ sum $ zipWith (*) (map texture ingredients) portions
+    totalCalories = sum $ zipWith (*) (map calories ingredients) portions
+
+trialWeights :: [[Int]]
+trialWeights = [[w1, w2, w3, w4] | w1 <- [0 .. 50], w2 <- [0 .. 50], w3 <- [0 .. 50], w4 <- [0 .. 50], w1 + w2 + w3 + w4 == 100]
 
 main :: IO ()
 main = do
-  input <- readFile "test_input.txt"
+  input <- readFile "input.txt"
   let s = lines input
   let ingredients = map processLine s
-  print $ map (scoreCookie ingredients) [[42, 58], [43, 57], [44, 56], [45, 55], [46, 54]]
+  print $ (maximum . map (scoreCookie ingredients False)) trialWeights
+  print $ (maximum . map (scoreCookie ingredients True)) trialWeights
