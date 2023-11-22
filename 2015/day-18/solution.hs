@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
