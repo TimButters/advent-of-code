@@ -1,42 +1,38 @@
 import re
 
 
-def read_input(filename: str) -> list[list[str]]:
+def part1(filename: str) -> int:
     with open(filename) as f:
-        return [re.findall(r"\d", line) for line in f.readlines()]
+        return sum([int(r[0] + r[-1]) for r in [re.findall(r"\d", line) for line in f.readlines()]])
 
 
-def read_input2(filename: str) -> list[list[str]]:
+def part2(filename: str) -> int:
+    d = {
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9",
+    }
     with open(filename) as f:
-        return [re.findall(r"\d", replace_nums(line)) for line in f.readlines()]
+        return sum(
+            [
+                _translate(re.findall(rf"(?=(\d|{'|'.join(d.keys())}))", line), d)
+                for line in f.readlines()
+            ]
+        )
 
 
-def sum_nums(input: list[list[str]]):
-    return sum(
-        [
-            int(line[0] + line[-1]) if len(line) > 1 else int(line[0] * 2)
-            for line in input
-        ]
-    )
-
-
-def replace_nums(line: str) -> str:
-    line = re.sub(r"one", "o1e", line)
-    line = re.sub(r"two", "t2o", line)
-    line = re.sub(r"three", "t3e", line)
-    line = re.sub(r"four", "f4r", line)
-    line = re.sub(r"five", "f5e", line)
-    line = re.sub(r"six", "s6x", line)
-    line = re.sub(r"seven", "s7n", line)
-    line = re.sub(r"eight", "e8t", line)
-    line = re.sub(r"nine", "n9e", line)
-    return line
+def _translate(input, d):
+    n = [d[i] if i in d else i for i in input]
+    return int(n[0] + n[-1])
 
 
 if __name__ == "__main__":
     filename = "input.txt"
-    input = read_input(filename)
-    print(sum_nums(input))
-
-    input2 = read_input2(filename)
-    print(sum_nums(input2))
+    print(part1(filename))
+    print(part2(filename))
