@@ -1,3 +1,4 @@
+from math import lcm
 from itertools import cycle
 
 
@@ -23,13 +24,17 @@ def find_zzz(links, directions):
             return counter
 
 
-def find_zzz_parallel(links, directions):
+def find_steps_to_z(links, directions):
     current_nodes = [k for k in links.keys() if k[-1] == "A"]
-    for counter, direction in enumerate(cycle(directions), start=1):
-        for idx, current_node in enumerate(current_nodes):
-            current_nodes[idx] = links[current_node][direction]
-        if all([n[-1] == "Z" for n in current_nodes]):
-            return counter
+    counters = []
+    for current_node in current_nodes:
+        for counter, direction in enumerate(cycle(directions), start=1):
+            current_node = links[current_node][direction]
+            if current_node[-1] == "Z":
+                counters.append(counter)
+                break
+    return counters
+
 
 
 if __name__ == "__main__":
@@ -37,8 +42,8 @@ if __name__ == "__main__":
     input = load_input(filename)
     directions = input[0]
     links = process_links(input[1:])
-    #count = find_zzz(links, directions)
-    #print(count)
+    count = find_zzz(links, directions)
+    print(count)
 
-    count_parallel = find_zzz_parallel(links, directions)
-    print(count_parallel)
+    counters = find_steps_to_z(links, directions)
+    print(lcm(*counters))
