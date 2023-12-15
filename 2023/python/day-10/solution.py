@@ -46,7 +46,7 @@ def find_path(coords, S):
         current_coord = start
         next_coord = [coord for coord in coords[start] if coord not in [S, start]][0]
         path = [S, start, next_coord]
-        while next_coord != S or next_coord not in coords:
+        while next_coord != S:
             current_coord = next_coord
             next_coord_options = [
                 coord for coord in coords[current_coord] if coord not in path
@@ -59,8 +59,27 @@ def find_path(coords, S):
     return paths
 
 
+def enclosed_area(path):
+    bounding_box_xmin = min(path, key=lambda c: c[0])[0]
+    bounding_box_xmax = max(path, key=lambda c: c[0])[0]
+    bounding_box_ymin = min(path, key=lambda c: c[1])[1]
+    bounding_box_ymax = max(path, key=lambda c: c[1])[1]
+
+    area = []
+    for x in range(bounding_box_xmin, bounding_box_xmax):
+        for y in range(bounding_box_ymin, bounding_box_ymax):
+            if (x, y) in path:
+                continue
+            edge_count = sum([1 for xtest, ytest in path if xtest > x and ytest == y])
+            if edge_count % 2:
+                print(edge_count)
+                area.append((x, y))
+    return area
+
+
+
 if __name__ == "__main__":
-    filename = "input.txt"
+    filename = "test_input.txt"
     input = load_input(filename)
     coords, S = parse_input(input)
     paths = find_path(coords, S)
