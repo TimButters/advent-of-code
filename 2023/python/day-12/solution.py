@@ -85,3 +85,6 @@ if __name__ == "__main__":
     filename = "input.txt"
     input = load_input(filename)
     print(sum([num_possibilities(record) for record in input]))
+
+    input2 = [((inp[0]+"?")*5, inp[1]*5) for inp in input]
+    print(sum([num_possibilities(record) for record in input2]))
