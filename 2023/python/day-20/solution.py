@@ -15,11 +15,13 @@ class Module:
     def __init__(self, id: str, bcast: list[str]):
         self.id = id
         self.broadcast = bcast
+        self.memory = []
 
     def broadcast_signal(self, signal):
         for b in self.broadcast:
             Module.q.put((self.id, b, signal))
             Module.signal_counts[signal] += 1
+        self.memory.append(signal)
 
 
 class FlipFlop(Module):
@@ -37,17 +39,20 @@ class FlipFlop(Module):
 class Conjunction(Module):
     def __init__(self, id: str, bcast: list[str], inputs: list[str]):
         super().__init__(id, bcast)
-        self.memory = {inp: Signal.LOW for inp in inputs}
+        self.feed_memory = {inp: Signal.LOW for inp in inputs}
 
     def receive_signal(self, source: str, signal: Signal):
-        if source != "broadcaster":
-            self.memory[source] = signal
 
-        if list(self.memory.values()) == [Signal.HIGH] * len(self.memory):
+        if source != "broadcaster":
+            self.feed_memory[source] = signal
+
+        if list(self.feed_memory.values()) == [Signal.HIGH] * len(self.feed_memory):
             send_sig = Signal.LOW
         else:
             send_sig = Signal.HIGH
 
+        if self.id in ["bh", "dl", "vd", "ns"] and send_sig == Signal.HIGH:
+            print(i, self.id)
         self.broadcast_signal(send_sig)
 
 
@@ -101,7 +106,7 @@ def load_input(filename: str):
     return modules
 
 
-def push_button(modules, output=None):
+def push_button(modules, feeder_nodes=None, i=None):
     Module.signal_counts[Signal.LOW] += 1
     for b in modules["broadcaster"]:
         Module.q.put(("broadcaster", b, Signal.LOW))
@@ -111,12 +116,11 @@ def push_button(modules, output=None):
         source, dest, signal = Module.q.get()
         modules[dest].receive_signal(source, signal)
 
-    if output is not None:
-        if modules[output].signals == [Signal.LOW]:
-            return True
-        else:
-            modules[output].signals = []
-    return False
+    if feeder_nodes is not None:
+        for f in feeder_nodes:
+            if modules[f].memory == Signal.HIGH and feeder_nodes[f] is None:
+                feeder_nodes[f] = -1
+    return None
 
 
 if __name__ == "__main__":
@@ -128,9 +132,10 @@ if __name__ == "__main__":
         push_button(modules)
     print(Module.signal_counts[Signal.LOW] * Module.signal_counts[Signal.HIGH])
 
-    # Part 2 - Brute force (doesn't work)
+    print()
+    feeder_nodes = {n: None for n in ["bh", "dl", "vd", "ns"]}
     modules = load_input(filename)
-    for i in range(1, 1000000):
-        if push_button(modules, output="rx"):
-            print(i)
-            break
+    for i in range(1, 5000):
+        push_button(modules, feeder_nodes, i)
+    # Outputs the cycle length for each feeder node.
+    # Multiply them together to get the correct answer
