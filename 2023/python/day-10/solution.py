@@ -1,3 +1,7 @@
+from itertools import product
+from matplotlib.path import Path
+
+
 def load_input(filename: str):
     with open(filename) as f:
         return [list(line.strip()) for line in f.readlines() if line]
@@ -59,28 +63,28 @@ def find_path(coords, S):
     return paths
 
 
-def enclosed_area(path):
+def enclosed_area_orig(path):
     bounding_box_xmin = min(path, key=lambda c: c[0])[0]
     bounding_box_xmax = max(path, key=lambda c: c[0])[0]
     bounding_box_ymin = min(path, key=lambda c: c[1])[1]
     bounding_box_ymax = max(path, key=lambda c: c[1])[1]
 
-    area = []
-    for x in range(bounding_box_xmin, bounding_box_xmax):
-        for y in range(bounding_box_ymin, bounding_box_ymax):
-            if (x, y) in path:
-                continue
-            edge_count = sum([1 for xtest, ytest in path if xtest > x and ytest == y])
-            if edge_count % 2:
-                print(edge_count)
-                area.append((x, y))
-    return area
-
+    polygon = Path(path)
+    points = set(
+        product(
+            range(bounding_box_xmin, bounding_box_xmax),
+            range(bounding_box_ymin, bounding_box_ymax),
+        )
+    )
+    candidates = list(points - set(path))
+    return sum([int(p) for p in polygon.contains_points(candidates)])
 
 
 if __name__ == "__main__":
-    filename = "test_input.txt"
+    filename = "input.txt"
     input = load_input(filename)
     coords, S = parse_input(input)
     paths = find_path(coords, S)
-    print(len(paths[0]) // 2)
+    path = paths[0]
+    print(len(path) // 2)
+    print(enclosed_area_orig(path))
