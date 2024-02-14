@@ -47,6 +47,8 @@ class Conjunction(Module):
         else:
             send_sig = Signal.HIGH
 
+        self.broadcast_signal(send_sig)
+
 
 class Output(Module):
     def __init__(self, id: str):
