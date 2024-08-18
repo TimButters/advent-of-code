@@ -10,6 +10,7 @@ class Amplifier:
         self.program = self._load_data(filename)
         self.inputs = [phase]
         self.outputs = None
+        self.pos = 0
 
     def _load_data(self, filename: str) -> list[int]:
         with open(filename) as f:
@@ -19,10 +20,10 @@ class Amplifier:
         self.outputs = output
 
     def run_program(self) -> int:
-        pos = 0
+        print("Running", self.name)
         last_output = -99
         while True:
-            instruction = [int(d) for d in str(self.program[pos])]
+            instruction = [int(d) for d in str(self.program[self.pos])]
             opcode = instruction[-1]
             param_modes = instruction[-3::-1]
 
@@ -33,7 +34,7 @@ class Amplifier:
                 increment = 4
                 if len(param_modes) < 2:
                     param_modes = param_modes + [0] * (2 - len(param_modes))
-                arg1, arg2, dest = self.program[pos + 1 : pos + 4]
+                arg1, arg2, dest = self.program[self.pos + 1 : self.pos + 4]
                 arg1, arg2 = [
                     a if p == 1 else self.program[a]
                     for a, p in zip([arg1, arg2], param_modes)
@@ -47,20 +48,20 @@ class Amplifier:
                     val = 1 if arg1 == arg2 else 0
                     self.program[dest] = val
             elif opcode == 3:
-                dest = self.program[pos + 1]
+                dest = self.program[self.pos + 1]
                 self.program[dest] = self.inputs.pop()
                 increment = 2
             elif opcode == 4:
                 if len(param_modes) < 1:
                     param_modes = [0]
-                dest = self.program[pos + 1]
+                dest = self.program[self.pos + 1]
                 last_output = self.program[dest] if param_modes[0] == 0 else dest
                 if self.outputs is not None:
                     self.outputs.insert(0, last_output)
                 increment = 2
             elif opcode == 5 or opcode == 6:
                 increment = 3
-                arg1, arg2 = self.program[pos + 1 : pos + 3]
+                arg1, arg2 = self.program[self.pos + 1 : self.pos + 3]
                 if len(param_modes) < 2:
                     param_modes = param_modes + [0] * (2 - len(param_modes))
                 arg1, arg2 = [
@@ -68,11 +69,11 @@ class Amplifier:
                     for a, p in zip([arg1, arg2], param_modes)
                 ]
                 if (opcode == 5 and arg1 != 0) or (opcode == 6 and arg1 == 0):
-                    pos = arg2
+                    self.pos = arg2
                     continue
             else:
                 raise ValueError("Unexpected opcode", opcode)
-            pos += increment
+            self.pos += increment
 
 
 class Amplifiers:
@@ -91,12 +92,18 @@ class Amplifiers:
         return output
 
 
-def part1(filename: str):
+def part1(filename: str) -> int:
     thrusters = []
     for phases in permutations([0, 1, 2, 3, 4]):
         amplifiers = Amplifiers(filename, phases)
         thrusters.append(amplifiers.run())
     return max(thrusters)
+
+
+def part2(filename: str) -> int:
+    amplifiers = Amplifiers(filename, [5, 6, 7, 8, 9], feedback=True)
+    output = amplifiers.run()
+    return output
 
 
 if __name__ == "__main__":
