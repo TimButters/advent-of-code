@@ -19,8 +19,7 @@ class Amplifier:
     def set_output_buffer(self, output: list[int]) -> None:
         self.outputs = output
 
-    def run_program(self) -> int:
-        print("Running", self.name)
+    def run_program(self) -> int | None:
         last_output = -99
         while True:
             instruction = [int(d) for d in str(self.program[self.pos])]
@@ -49,7 +48,6 @@ class Amplifier:
                     self.program[dest] = val
             elif opcode == 3:
                 if not self.inputs:
-                    print("Pause", self.name)
                     break
                 dest = self.program[self.pos + 1]
                 self.program[dest] = self.inputs.pop()
@@ -81,6 +79,7 @@ class Amplifier:
 
 class Amplifiers:
     def __init__(self, filename: str, phases: Collection[int], feedback: bool = False):
+        self.feedback = feedback
         self.amplifiers = [Amplifier(name, filename, phase) for name, phase in zip(["A", "B", "C", "D", "E"], phases)]
         self.amplifiers[0].inputs.insert(0, 0)
         for i in range(len(self.amplifiers) - 1):
@@ -88,17 +87,13 @@ class Amplifiers:
         if feedback:
             self.amplifiers[-1].set_output_buffer(self.amplifiers[0].inputs)
 
-    def run(self) -> int:
-        output = 0
-        for amp in self.amplifiers:
+    def run(self):
+        amps = cycle(self.amplifiers) if self.feedback else self.amplifiers
+        for amp in amps:
             output = amp.run_program()
-        return output
-
-    def run_feedback(self) -> int:
-        for amp in cycle(self.amplifiers):
-            output = amp.run_program()
-            if output is not None:
+            if output is not None and amp.name == "E":
                 break
+        assert isinstance(output, int)
         return output
 
 
@@ -111,13 +106,18 @@ def part1(filename: str) -> int:
 
 
 def part2(filename: str) -> int:
-    amplifiers = Amplifiers(filename, [5, 6, 7, 8, 9], feedback=True)
-    output = amplifiers.run_feedback()
-    return output
+    thrusters = []
+    for phases in permutations([5, 6, 7, 8, 9]):
+        amplifiers = Amplifiers(filename, phases, feedback=True)
+        thrusters.append(amplifiers.run())
+    return max(thrusters)
 
 
 if __name__ == "__main__":
     filename = sys.argv[1]
 
-    thrusters = part2(filename)
+    thrusters = part1(filename)
     print("Part 1:", thrusters)
+
+    thrusters = part2(filename)
+    print("Part 2:", thrusters)
