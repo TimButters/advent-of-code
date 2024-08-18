@@ -1,6 +1,6 @@
 import sys
 
-from itertools import permutations
+from itertools import permutations, cycle
 from collections.abc import Collection
 
 
@@ -48,6 +48,9 @@ class Amplifier:
                     val = 1 if arg1 == arg2 else 0
                     self.program[dest] = val
             elif opcode == 3:
+                if not self.inputs:
+                    print("Pause", self.name)
+                    break
                 dest = self.program[self.pos + 1]
                 self.program[dest] = self.inputs.pop()
                 increment = 2
@@ -91,6 +94,13 @@ class Amplifiers:
             output = amp.run_program()
         return output
 
+    def run_feedback(self) -> int:
+        for amp in cycle(self.amplifiers):
+            output = amp.run_program()
+            if output is not None:
+                break
+        return output
+
 
 def part1(filename: str) -> int:
     thrusters = []
@@ -102,12 +112,12 @@ def part1(filename: str) -> int:
 
 def part2(filename: str) -> int:
     amplifiers = Amplifiers(filename, [5, 6, 7, 8, 9], feedback=True)
-    output = amplifiers.run()
+    output = amplifiers.run_feedback()
     return output
 
 
 if __name__ == "__main__":
     filename = sys.argv[1]
 
-    thrusters = part1(filename)
+    thrusters = part2(filename)
     print("Part 1:", thrusters)
