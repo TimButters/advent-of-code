@@ -78,6 +78,7 @@ class Amplifier:
 class Amplifiers:
     def __init__(self, filename: str, phases: Collection[int], feedback: bool = False):
         self.amplifiers = [Amplifier(name, filename, phase) for name, phase in zip(["A", "B", "C", "D", "E"], phases)]
+        self.amplifiers[0].inputs.insert(0, 0)
         for i in range(len(self.amplifiers) - 1):
             self.amplifiers[i].set_output_buffer(self.amplifiers[i + 1].inputs)
         if feedback:
@@ -85,7 +86,6 @@ class Amplifiers:
 
     def run(self) -> int:
         output = 0
-        self.amplifiers[0].inputs.insert(0, 0)
         for amp in self.amplifiers:
             output = amp.run_program()
         return output
