@@ -9,5 +9,5 @@ solution
 input.txt
 test_input.txt
 *.bin
-target/*
+target/
 *.lock
