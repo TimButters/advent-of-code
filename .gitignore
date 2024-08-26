@@ -8,3 +8,6 @@ solution
 .venv
 input.txt
 test_input.txt
+*.bin
+target/*
+*.lock
