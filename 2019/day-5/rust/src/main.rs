@@ -82,7 +82,7 @@ impl IntCode<'_> {
         }
     }
 
-    fn process_operation(&self, opcode: &char, mut param_modes: Vec<&char>) -> usize {
+    fn process_operation(&mut self, opcode: &char, mut param_modes: Vec<&char>) -> usize {
         let num_args = self.op_arg_nums[opcode];
 
         if param_modes.len() != num_args {
@@ -91,22 +91,23 @@ impl IntCode<'_> {
             }
         }
 
-        let args = Vec::<i32>::new();
-        for i in 1..num_args + 1 {
-            args.push(self.program[self._position + 1].parse::<i32>().expect("Error parsing string to int."));
+        let mut args = Vec::<i32>::new();
+        for (i, c) in param_modes.iter().enumerate() {
+            let v = self.program[self._position + i + 1].parse::<i32>().expect("Error parsing string to int.");
+            if *c == &'0' {
+                args.push(self.program[v as usize].parse::<i32>().expect("Error parsing int"));
+            } else {
+                args.push(v);
+            }
         }
 
-        if param_modes[0] == &'1' {
-            let val1: i32;
-            let val2: i32;
-            if param_modes[0] == &'0' {
-                val1 = self.program[args[0]].parse::<i32>();
-            }
-            self.program[args[args.len()-1]] = val1 + val2;
-        } else {
-            arg1 =
+        if opcode == &'1' {
+            self.program[args[args.len()-1] as usize] = (args[0] + args[1]).to_string();
+        } else if opcode == &'2' {
+            self.program[args[args.len()-1] as usize] = (args[0] * args[1]).to_string();
+        } else if opcode == &'3' {
+
         }
-        arg1 = self.program[]
 
         return num_args + 1;
     }
@@ -116,4 +117,4 @@ fn main() {
     let filename: &str = "../test_input.txt";
     let mut intcode: IntCode = IntCode::new(filename, vec![0]);
     intcode.print_program();
-    intcode.args.push()}
+}
