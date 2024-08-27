@@ -7,6 +7,7 @@ pub struct IntCode<'a> {
     program: Vec<String>,
     pub inputs: Vec<i32>,
     op_arg_nums: HashMap<&'a char, usize>,
+    op_has_dest: HashMap<&'a char, bool>,
     //pub outputs:&'a Vec<i32>,
     _position: usize,
 }
@@ -17,17 +18,27 @@ impl IntCode<'_> {
             program: Vec::<String>::new(),
             inputs: inputs,
             op_arg_nums: HashMap::<&char, usize>::new(),
+            op_has_dest: HashMap::<&char, bool>::new(),
             _position: 0,
         };
 
-        intcode.op_arg_nums.insert(&'1', 3);
-        intcode.op_arg_nums.insert(&'2', 3);
-        intcode.op_arg_nums.insert(&'3', 1);
+        intcode.op_arg_nums.insert(&'1', 2);
+        intcode.op_arg_nums.insert(&'2', 2);
+        intcode.op_arg_nums.insert(&'3', 0);
         intcode.op_arg_nums.insert(&'4', 1);
         intcode.op_arg_nums.insert(&'5', 2);
         intcode.op_arg_nums.insert(&'6', 2);
-        intcode.op_arg_nums.insert(&'7', 3);
-        intcode.op_arg_nums.insert(&'8', 3);
+        intcode.op_arg_nums.insert(&'7', 2);
+        intcode.op_arg_nums.insert(&'8', 2);
+
+        intcode.op_has_dest.insert(&'1', true);
+        intcode.op_has_dest.insert(&'2', true);
+        intcode.op_has_dest.insert(&'3', true);
+        intcode.op_has_dest.insert(&'4', false);
+        intcode.op_has_dest.insert(&'5', false);
+        intcode.op_has_dest.insert(&'6', false);
+        intcode.op_has_dest.insert(&'7', true);
+        intcode.op_has_dest.insert(&'8', true);
 
         intcode.load_program(filename);
 
@@ -86,10 +97,15 @@ impl IntCode<'_> {
         let num_args = self.op_arg_nums[opcode];
         let mut increment = num_args + 1;
 
+
         if param_modes.len() != num_args {
             for _ in 0..(num_args - param_modes.len()) {
                 param_modes.push(&'0');
             }
+        }
+        if self.op_has_dest[opcode] {
+            param_modes.push(&'1');
+            increment += 1;
         }
 
         let mut args = Vec::<i32>::new();
@@ -109,23 +125,23 @@ impl IntCode<'_> {
         }
 
         if opcode == &'1' {
-            self.program[args[args.len() - 1] as usize] = (args[0] + args[1]).to_string();
+            self.program[args[2] as usize] = (args[0] + args[1]).to_string();
         } else if opcode == &'2' {
-            self.program[args[args.len() - 1] as usize] = (args[0] * args[1]).to_string();
+            self.program[args[2] as usize] = (args[0] * args[1]).to_string();
         } else if opcode == &'3' {
             let input = self.inputs.pop().expect("No inputs to read.");
             self.program[args[0] as usize] = input.to_string();
         } else if opcode == &'4' {
-            print!("{}", args[0]);
+            println!("OUTPUT: {}", args[0]);
         } else if opcode == &'5' || opcode == &'6' {
             if (opcode == &'5' && args[0] != 0) || (opcode == &'6' && args[0] == 0) {
                 self._position = args[1] as usize;
                 increment = 0;
             }
         } else if opcode == &'7' {
-            self.program[args[2] as usize] = if args[0] < args[1] { '1'.to_string() } else { '0'.to_string() }
+            self.program[args[2] as usize] = if args[0] < args[1] { '1'.to_string() } else { '0'.to_string() };
         } else if opcode == &'8' {
-            self.program[args[2] as usize] = if args[0] == args[1] { '1'.to_string() } else { '0'.to_string() }
+            self.program[args[2] as usize] = if args[0] == args[1] { '1'.to_string() } else { '0'.to_string() };
         } else {
             panic!("What is this opcode? {}", opcode);
         }
@@ -135,7 +151,7 @@ impl IntCode<'_> {
 }
 
 fn main() {
-    let filename: &str = "../test_input.txt";
-    let mut intcode: IntCode = IntCode::new(filename, vec![0]);
-    intcode.print_program();
+    let filename: &str = "../input.txt";
+    let mut intcode: IntCode = IntCode::new(filename, vec![5]);
+    intcode.run();
 }
