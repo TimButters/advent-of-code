@@ -84,6 +84,7 @@ impl IntCode<'_> {
 
     fn process_operation(&mut self, opcode: &char, mut param_modes: Vec<&char>) -> usize {
         let num_args = self.op_arg_nums[opcode];
+        let mut increment = num_args + 1;
 
         if param_modes.len() != num_args {
             for _ in 0..(num_args - param_modes.len()) {
@@ -93,23 +94,43 @@ impl IntCode<'_> {
 
         let mut args = Vec::<i32>::new();
         for (i, c) in param_modes.iter().enumerate() {
-            let v = self.program[self._position + i + 1].parse::<i32>().expect("Error parsing string to int.");
+            let v = self.program[self._position + i + 1]
+                .parse::<i32>()
+                .expect("Error parsing string to int.");
             if *c == &'0' {
-                args.push(self.program[v as usize].parse::<i32>().expect("Error parsing int"));
+                args.push(
+                    self.program[v as usize]
+                        .parse::<i32>()
+                        .expect("Error parsing int"),
+                );
             } else {
                 args.push(v);
             }
         }
 
         if opcode == &'1' {
-            self.program[args[args.len()-1] as usize] = (args[0] + args[1]).to_string();
+            self.program[args[args.len() - 1] as usize] = (args[0] + args[1]).to_string();
         } else if opcode == &'2' {
-            self.program[args[args.len()-1] as usize] = (args[0] * args[1]).to_string();
+            self.program[args[args.len() - 1] as usize] = (args[0] * args[1]).to_string();
         } else if opcode == &'3' {
-
+            let input = self.inputs.pop().expect("No inputs to read.");
+            self.program[args[0] as usize] = input.to_string();
+        } else if opcode == &'4' {
+            print!("{}", args[0]);
+        } else if opcode == &'5' || opcode == &'6' {
+            if (opcode == &'5' && args[0] != 0) || (opcode == &'6' && args[0] == 0) {
+                self._position = args[1] as usize;
+                increment = 0;
+            }
+        } else if opcode == &'7' {
+            self.program[args[2] as usize] = if args[0] < args[1] { '1'.to_string() } else { '0'.to_string() }
+        } else if opcode == &'8' {
+            self.program[args[2] as usize] = if args[0] == args[1] { '1'.to_string() } else { '0'.to_string() }
+        } else {
+            panic!("What is this opcode? {}", opcode);
         }
 
-        return num_args + 1;
+        return increment;
     }
 }
 
