@@ -5,8 +5,9 @@ import sys
 
 Point = tuple[int, int]
 Grid = list[Point]
-FPoint = tuple[float, float]
-FGrid = list[FPoint]
+VPoint = tuple[int, int, int, int]
+VFPoint = tuple[float, float, int, int]
+VFGrid = list[VFPoint]
 
 
 def load_input(filename: str) -> tuple[Grid, int, int]:
@@ -71,14 +72,14 @@ def part1(grid: Grid, max_x: int, max_y: int) -> tuple[Point, int]:
     )
 
 
-def cart2pol(point: Point) -> FPoint:
-    x, y = point
+def cart2pol(point: VPoint) -> VFPoint:
+    x, y, X, Y = point
     r = sqrt(x**2 + y**2)
     theta = atan2(y, x) % (2 * pi)
-    return r, theta
+    return r, theta, X, Y
 
 
-def rotate_polar_grid(polar_grid) -> FGrid:
+def rotate_polar_grid(polar_grid) -> VFGrid:
     def _rotate(t: float) -> float:
         converted_t = t % (2 * pi)  # Move to 0 - 2PI range
         converted_t = (converted_t - ((3 / 4 * 2 * pi))) % (
@@ -86,12 +87,12 @@ def rotate_polar_grid(polar_grid) -> FGrid:
         )  # Make straight up 0 rads
         return converted_t
 
-    return [(r, _rotate(t)) for r, t in polar_grid]
+    return [(r, _rotate(t), x, y) for r, t, x, y in polar_grid]
 
 
-def grid2polar(grid: Grid, point: Point = (0, 0)) -> FGrid:
+def grid2polar(grid: Grid, point: Point = (0, 0)) -> VFGrid:
     px, py = point
-    shifted_grid = [(x - px, y - py) for x, y in grid]
+    shifted_grid = [(x - px, y - py, x, y) for x, y in grid]
     polar_grid = [cart2pol(p) for p in shifted_grid]
     return rotate_polar_grid(polar_grid)
 
@@ -102,7 +103,9 @@ if __name__ == "__main__":
     station, max_count = part1(asteroids, X, Y)
     print("Part 1:", max_count)
 
-    polar = [(r, theta) for r, theta in grid2polar(asteroids, station) if r != 0]
+    polar = [
+        (r, theta, x, y) for r, theta, x, y in grid2polar(asteroids, station) if r != 0
+    ]
     polar.sort(key=lambda x: (x[1], x[0]))
     targets = [
         (angle, list(grp)[::-1]) for angle, grp in groupby(polar, key=lambda x: x[1])
@@ -110,9 +113,10 @@ if __name__ == "__main__":
     c = cycle(targets)
 
     destroyed = []
-    while len(destroyed) < 6:
+    while len(destroyed) < 200:
         theta, coords = next(c)
         if coords:
             destroyed.append(coords.pop())
 
-    last_asteroid = destroyed[-1]
+    _, _, x, y = destroyed[-1]
+    print("Part 2:", x * 100 + y)
