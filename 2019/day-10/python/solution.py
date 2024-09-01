@@ -1,9 +1,11 @@
-from math import isclose
+from math import isclose, sqrt, atan2, pi
 import sys
 
 
 Point = tuple[int, int]
 Grid = list[Point]
+FPoint = tuple[float, float]
+FGrid = list[FPoint]
 
 def load_input(filename: str) -> tuple[Grid, int, int]:
     with open(filename) as f:
@@ -54,6 +56,28 @@ def count_asteroids(point: Point, grid: Grid) -> int:
 def part1(grid: Grid, max_x: int, max_y: int) -> int:
     return max([count_asteroids(asteroid, grid) for asteroid in grid])
 
+
+def cart2pol(point: Point) -> FPoint:
+    x, y = point
+    r = sqrt(x**2 + y**2)
+    theta = atan2(y, x) % (2 * pi)
+    return r, theta
+
+
+def rotate_polar_grid(polar_grid) -> FGrid:
+    def _rotate(t: float) -> float:
+        converted_t = t % (2 * pi)  # Move to 0 - 2PI range
+        converted_t = (converted_t - ((3/4 * 2*pi))) % (2 * pi)  # Make straight up 0 rads
+        return converted_t
+
+    return [(r, _rotate(t)) for r, t in polar_grid]
+
+
+def grid2polar(grid: Grid, point: Point = (0, 0)) -> FGrid:
+    px, py = point
+    shifted_grid = [(x-px, y-py) for x, y in grid]
+    polar_grid = [cart2pol(p) for p in shifted_grid]
+    return rotate_polar_grid(polar_grid)
 
 
 if __name__ == "__main__":
