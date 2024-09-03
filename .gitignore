@@ -7,7 +7,7 @@ solution
 .vscode
 .venv
 input.txt
-test_input.txt
+test_input*.txt
 *.bin
 target/
 *.lock
