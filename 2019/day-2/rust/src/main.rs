@@ -11,7 +11,11 @@ fn load_program(filename: &str) -> Vec<i32> {
         .read_line(&mut prog)
         .expect("Error reading line from file.");
 
-    return prog.trim().split(",").map(|x| x.parse::<i32>().expect("Oh no.")).collect();
+    return prog
+        .trim()
+        .split(",")
+        .map(|x| x.parse::<i32>().expect("Oh no."))
+        .collect();
 }
 
 fn run_program(program: &mut Vec<i32>, noun: i32, verb: i32) -> i32 {
@@ -25,7 +29,7 @@ fn run_program(program: &mut Vec<i32>, noun: i32, verb: i32) -> i32 {
             return program[0];
         }
 
-        if let [arg1, arg2, dest] = program[pos+1..pos+4] {
+        if let [arg1, arg2, dest] = program[pos + 1..pos + 4] {
             if opcode == 1 {
                 program[dest as usize] = program[arg1 as usize] + program[arg2 as usize];
             } else if opcode == 2 {
@@ -38,12 +42,29 @@ fn run_program(program: &mut Vec<i32>, noun: i32, verb: i32) -> i32 {
         }
         pos += 4;
     }
+}
 
+fn part2(program: &mut Vec<i32>) -> i32 {
+    for noun in 0..100 {
+        for verb in 0..100 {
+            let mut p: Vec<i32> = program.clone();
+            _ = run_program(&mut p, noun, verb);
+
+            if p[0] == 19690720 {
+                return 100 * noun + verb;
+            }
+        }
+    }
+    return -1;
 }
 
 fn main() {
     let filename: &str = "../input.txt";
-    let mut program = load_program(filename);
+    let mut program: Vec<i32> = load_program(filename);
     let result: i32 = run_program(&mut program, 12, 2);
     println!("Part 1: {result}");
+
+    let mut program: Vec<i32> = load_program(filename);
+    let result: i32 = part2(&mut program);
+    println!("Part 2: {result}");
 }
