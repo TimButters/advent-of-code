@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::collections::hash_set::Intersection;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -67,9 +66,9 @@ fn map_wire(wire: &Vec<(String, i32)>) -> Vec<(i32, i32)> {
     return coords;
 }
 
-fn num_steps(point: (i32, i32), w1: &Vec<(i32, i32)>, w2: &Vec<(i32, i32)>) -> usize {
-    let index1: usize = w1.into_iter().position(|p| *p == point).unwrap();
-    let index2: usize = w2.into_iter().position(|p| *p == point).unwrap();
+fn num_steps(point: &(i32, i32), w1: &Vec<(i32, i32)>, w2: &Vec<(i32, i32)>) -> usize {
+    let index1: usize = w1.iter().position(|p: &(i32, i32)| p == point).unwrap();
+    let index2: usize = w2.iter().position(|p: &(i32, i32)| p == point).unwrap();
     return index1 + index2 + 2;
 }
 
@@ -88,15 +87,15 @@ fn main() {
 
      let min_crossing: i32 = crossings
         .clone()
-        .into_iter()
-        .map(|c: (i32, i32)| l1norm(&c))
+        .iter()
+        .map(|c: &(i32, i32)| l1norm(c))
         .min()
         .expect("No distances!");
 
     let min_steps: usize = crossings
         .clone()
-        .into_iter()
-        .map(|c: (i32, i32)| num_steps(c, &wireset[0], &wireset[1]))
+        .iter()
+        .map(|c: &(i32, i32)| num_steps(c, &wireset[0], &wireset[1]))
         .min()
         .expect("No steps!");
 
