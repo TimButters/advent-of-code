@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::collections::hash_set::Intersection;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -30,10 +31,10 @@ fn parse_instruction(instruction: &str) -> (String, i32) {
     return (direction, magnitude);
 }
 
-fn map_wire(wire: &Vec<(String, i32)>) -> HashSet<(i32, i32)> {
+fn map_wire(wire: &Vec<(String, i32)>) -> Vec<(i32, i32)> {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
-    let mut coords: HashSet<(i32, i32)> = HashSet::<(i32, i32)>::new();
+    let mut coords: Vec<(i32, i32)> = Vec::<(i32, i32)>::new();
 
     for (direction, magnitude) in wire {
         let xs: Vec<i32>;
@@ -59,14 +60,14 @@ fn map_wire(wire: &Vec<(String, i32)>) -> HashSet<(i32, i32)> {
         }
 
         for (xx, yy) in xs.into_iter().zip(ys) {
-            coords.insert((xx, yy));
+            coords.push((xx, yy));
         }
     }
 
     return coords;
 }
 
-fn num_steps(point: (i32, i32), w1: &HashSet<(i32, i32)>, w2: &HashSet<(i32, i32)>) -> usize {
+fn num_steps(point: (i32, i32), w1: &Vec<(i32, i32)>, w2: &Vec<(i32, i32)>) -> usize {
     let index1: usize = w1.into_iter().position(|p| *p == point).unwrap();
     let index2: usize = w2.into_iter().position(|p| *p == point).unwrap();
     return index1 + index2 + 2;
@@ -78,25 +79,26 @@ fn l1norm(coord: &(i32, i32)) -> i32 {
 
 fn main() {
     let wires: Vec<Vec<(String, i32)>> = load_data("../input.txt");
-    let wireset: Vec<HashSet<(i32, i32)>> = wires
+    let wireset: Vec<Vec<(i32, i32)>> = wires
         .into_iter()
         .map(|w: Vec<(String, i32)>| map_wire(&w))
         .collect();
 
-    let crossings = wireset[0].intersection(&wireset[1]);
+    let crossings: Vec<(i32, i32)> = HashSet::<_>::from_iter(wireset[0].clone()).intersection(&HashSet::<_>::from_iter(wireset[1].clone())).cloned().collect();
 
-    let min_crossing: i32 = crossings
+     let min_crossing: i32 = crossings
         .clone()
         .into_iter()
-        .map(|c: &(i32, i32)| l1norm(c))
+        .map(|c: (i32, i32)| l1norm(&c))
         .min()
         .expect("No distances!");
 
     let min_steps: usize = crossings
         .clone()
         .into_iter()
-        .map(|c: &(i32, i32)| num_steps(*c, &wireset[0], &wireset[1]))
-        .min().expect("No steps!");
+        .map(|c: (i32, i32)| num_steps(c, &wireset[0], &wireset[1]))
+        .min()
+        .expect("No steps!");
 
     println!("Part 1: {min_crossing}");
     println!("Part 2: {min_steps}");
