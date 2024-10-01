@@ -66,6 +66,12 @@ fn map_wire(wire: &Vec<(String, i32)>) -> HashSet<(i32, i32)> {
     return coords;
 }
 
+fn num_steps(point: (i32, i32), w1: &HashSet<(i32, i32)>, w2: &HashSet<(i32, i32)>) -> usize {
+    let index1: usize = w1.into_iter().position(|p| *p == point).unwrap();
+    let index2: usize = w2.into_iter().position(|p| *p == point).unwrap();
+    return index1 + index2 + 2;
+}
+
 fn l1norm(coord: &(i32, i32)) -> i32 {
     return coord.0.abs() + coord.1.abs();
 }
@@ -80,10 +86,18 @@ fn main() {
     let crossings = wireset[0].intersection(&wireset[1]);
 
     let min_crossing: i32 = crossings
+        .clone()
         .into_iter()
         .map(|c: &(i32, i32)| l1norm(c))
         .min()
         .expect("No distances!");
 
+    let min_steps: usize = crossings
+        .clone()
+        .into_iter()
+        .map(|c: &(i32, i32)| num_steps(*c, &wireset[0], &wireset[1]))
+        .min().expect("No steps!");
+
     println!("Part 1: {min_crossing}");
+    println!("Part 2: {min_steps}");
 }
