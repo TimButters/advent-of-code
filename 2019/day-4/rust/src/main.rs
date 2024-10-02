@@ -41,7 +41,7 @@ fn check_password(password: u32, part2: bool) -> bool {
                 std::char::from_digit(*d as u32, 10).expect("Could not convert digit to char.")
             })
             .collect();
-        //println!("{diff:?}, {diff_string}");
+
         if !re.is_match(diff_string.as_str()) {
             return false;
         }
