@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -37,7 +38,7 @@ impl Graph {
         self.nodes.insert(label, parent);
     }
 
-    pub fn all_orbits(self) -> u32 {
+    pub fn all_orbits(&self) -> u32 {
         let mut count: u32 = 0;
         for (_, parent) in &self.nodes {
             let mut current_parent: String = parent.clone();
@@ -48,10 +49,31 @@ impl Graph {
         }
         return count;
     }
+
+    pub fn orbital_transfers(&self, node1: &String, node2: &String) -> usize {
+        let path1: HashSet<String> = self.path_to_com(node1).into_iter().collect();
+        let path2: HashSet<String> = self.path_to_com(node2).into_iter().collect();
+        let path_length: usize = path1.symmetric_difference(&path2).collect::<Vec<&String>>().len();
+        return path_length;
+    }
+
+    fn path_to_com(&self, node: &String) -> Vec<String> {
+        let mut path: Vec<String> = vec![node.clone()];
+        let mut parent: String = self.nodes[node].clone();
+        while parent != "" {
+            path.push(parent.clone());
+            parent = self.nodes[&parent].clone();
+        }
+        return path;
+    }
 }
 
 fn main() {
     let filename = "../input.txt";
     let graph: Graph = Graph::from_file(filename);
     println!("Part 1: {}", graph.all_orbits());
+
+    let node1: &String = &graph.nodes["YOU"];
+    let node2: &String = &graph.nodes["SAN"];
+    println!("Part 2: {}", graph.orbital_transfers(node1, node2));
 }
