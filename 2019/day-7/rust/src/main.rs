@@ -63,7 +63,7 @@ impl IntCode {
         print!("\n");
     }
 
-    fn run(&mut self, input_buffer: &mut Vec<i32>, output_buffer: &mut Vec<i32>) {
+    fn run(&mut self, input_buffer: &mut Vec<i32>, output_buffer: &mut Vec<i32>) -> Option<i32> {
         loop {
             let instruction: &Vec<char> = &self.program[self._position].chars().collect();
             let opcode: &char;
@@ -72,7 +72,8 @@ impl IntCode {
             if instruction.len() > 1 {
                 let opcode_set: &[char] = &instruction[&instruction.len() - 2..];
                 if opcode_set == ['9', '9'] {
-                    break;
+                    println!("{:?}", output_buffer[output_buffer.len()-1]);
+                    return Some(output_buffer[output_buffer.len()-1])
                 } else {
                     opcode = &opcode_set[opcode_set.len() - 1];
                 }
@@ -86,16 +87,27 @@ impl IntCode {
                 param_modes = Vec::<&char>::new();
             }
 
-            let increment = self.process_operation(opcode, param_modes, input_buffer, output_buffer);
+            let increment =
+                self.process_operation(opcode, param_modes, input_buffer, output_buffer);
 
-            self._position += increment;
+            if increment.is_some() {
+                self._position += increment.unwrap();
+            } else {
+                return None;
+            }
         }
     }
 
-    fn process_operation(&mut self, opcode: &char, mut param_modes: Vec<&char>, input_buffer: &mut Vec<i32>, output_buffer: &mut Vec<i32>) -> usize {
+    fn process_operation(
+        &mut self,
+        opcode: &char,
+        mut param_modes: Vec<&char>,
+        input_buffer: &mut Vec<i32>,
+        output_buffer: &mut Vec<i32>,
+    ) -> Option<usize> {
+        println!("{:?}", input_buffer);
         let num_args = self.op_arg_nums[opcode];
         let mut increment = num_args + 1;
-
 
         if param_modes.len() != num_args {
             for _ in 0..(num_args - param_modes.len()) {
@@ -128,9 +140,13 @@ impl IntCode {
         } else if *opcode == '2' {
             self.program[args[2] as usize] = (args[0] * args[1]).to_string();
         } else if *opcode == '3' {
+            if input_buffer.is_empty() {
+                return None;
+            }
             let input = input_buffer.pop().expect("No inputs to read.");
             self.program[args[0] as usize] = input.to_string();
         } else if *opcode == '4' {
+            output_buffer.push(args[0]);
             println!("OUTPUT: {}", args[0]);
         } else if *opcode == '5' || *opcode == '6' {
             if (*opcode == '5' && args[0] != 0) || (*opcode == '6' && args[0] == 0) {
@@ -138,14 +154,22 @@ impl IntCode {
                 increment = 0;
             }
         } else if *opcode == '7' {
-            self.program[args[2] as usize] = if args[0] < args[1] { String::from('1') } else { String::from('0') };
+            self.program[args[2] as usize] = if args[0] < args[1] {
+                String::from('1')
+            } else {
+                String::from('0')
+            };
         } else if *opcode == '8' {
-            self.program[args[2] as usize] = if args[0] == args[1] { String::from('1') } else { String::from('0') };
+            self.program[args[2] as usize] = if args[0] == args[1] {
+                String::from('1')
+            } else {
+                String::from('0')
+            };
         } else {
             panic!("What is this opcode? {}", opcode);
         }
 
-        return increment;
+        return Some(increment);
     }
 }
 
@@ -156,8 +180,28 @@ fn main() {
     let mut buffers: Vec<Vec<i32>> = vec![Vec::<i32>::new(); N];
     let mut intcodes: Vec<IntCode> = vec![IntCode::new(filename); N];
 
+    for (i, v) in &mut buffers.iter_mut().enumerate() {
+        v.push(i as i32);
+    }
+
+    let mut signal: Option<i32>;
     for (i, intcode) in intcodes.iter_mut().enumerate() {
-        let (input_buffers, output_buffers) = buffers.split_at_mut(i+1);
-        intcode.run(&mut input_buffers[0], &mut output_buffers[0]); //[(i + 1) % N]);
+        let input_buffer: &mut Vec<i32>;
+        let output_buffer: &mut Vec<i32>;
+        if i < 4 {
+            let (input_buffers, output_buffers) = buffers.split_at_mut(i + 1);
+            input_buffer = &mut input_buffers[input_buffers.len() - 1];
+            output_buffer = &mut output_buffers[0];
+        } else {
+            let (output_buffers, input_buffers) = buffers.split_at_mut(i);
+            input_buffer = &mut input_buffers[0];
+            output_buffer = &mut output_buffers[0];
+        }
+        signal = intcode.run(input_buffer, output_buffer);
+
+        if signal.is_some() {
+            println!("{}", signal.unwrap());
+            break;
+        }
     }
 }
