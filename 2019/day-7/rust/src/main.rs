@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::iter::Enumerate;
+//use std::iter::Cycle;
 
 #[derive(Clone)]
 struct IntCode {
@@ -72,7 +72,7 @@ impl IntCode {
             if instruction.len() > 1 {
                 let opcode_set: &[char] = &instruction[&instruction.len() - 2..];
                 if opcode_set == ['9', '9'] {
-                    println!("{:?}", output_buffer[output_buffer.len()-1]);
+                    println!("OUTPUT: {:?}", output_buffer[output_buffer.len()-1]);
                     return Some(output_buffer[output_buffer.len()-1])
                 } else {
                     opcode = &opcode_set[opcode_set.len() - 1];
@@ -105,7 +105,8 @@ impl IntCode {
         input_buffer: &mut Vec<i32>,
         output_buffer: &mut Vec<i32>,
     ) -> Option<usize> {
-        println!("{:?}", input_buffer);
+        println!("Input: {:?}", input_buffer);
+        println!("Output: {:?}", output_buffer);
         let num_args = self.op_arg_nums[opcode];
         let mut increment = num_args + 1;
 
@@ -147,7 +148,7 @@ impl IntCode {
             self.program[args[0] as usize] = input.to_string();
         } else if *opcode == '4' {
             output_buffer.push(args[0]);
-            println!("OUTPUT: {}", args[0]);
+            //println!("OUTPUT: {}", args[0]);
         } else if *opcode == '5' || *opcode == '6' {
             if (*opcode == '5' && args[0] != 0) || (*opcode == '6' && args[0] == 0) {
                 self._position = usize::try_from(args[1]).expect("Error converting to usize.");
@@ -175,17 +176,21 @@ impl IntCode {
 
 fn main() {
     let filename: &str = "../input.txt";
-    let N: usize = 5;
+    const N: usize = 5;
 
-    let mut buffers: Vec<Vec<i32>> = vec![Vec::<i32>::new(); N];
     let mut intcodes: Vec<IntCode> = vec![IntCode::new(filename); N];
+    let mut buffers: Vec<Vec<i32>> = vec![Vec::<i32>::new(); N];
+    buffers[0].push(0);
 
     for (i, v) in &mut buffers.iter_mut().enumerate() {
-        v.push(i as i32);
+        v.push((i + 5) as i32);
     }
 
     let mut signal: Option<i32>;
-    for (i, intcode) in intcodes.iter_mut().enumerate() {
+    let mut intcode: &mut IntCode;
+    for i in (0..N).cycle() {
+        intcode = &mut intcodes[i];
+
         let input_buffer: &mut Vec<i32>;
         let output_buffer: &mut Vec<i32>;
         if i < 4 {
