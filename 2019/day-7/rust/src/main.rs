@@ -57,13 +57,6 @@ impl IntCode {
         self.program = prog.trim().split(",").map(|x| x.to_string()).collect();
     }
 
-    fn print_program(&self) {
-        for el in &self.program {
-            print!("{}, ", el);
-        }
-        print!("\n");
-    }
-
     fn run(
         &mut self,
         input_buffer: &mut VecDeque<i32>,
