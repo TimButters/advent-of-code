@@ -168,11 +168,11 @@ impl IntCode {
     }
 }
 
-fn run_permutation(filename: &str, phases: Vec<i32>) -> Result<i32, &str> {
+fn run_amplifiers(filename: &str, phases: Vec<i32>, feedback: bool) -> Result<i32, &str> {
     const N: usize = 5;
 
     let mut intcodes: Vec<IntCode> = vec![IntCode::new(filename); N];
-    let mut buffers: Vec<VecDeque<i32>> = vec![VecDeque::<i32>::new(); N];
+    let mut buffers: Vec<VecDeque<i32>> = vec![VecDeque::<i32>::new(); N + 1];
 
     if phases.len() != N {
         return Err("Wrong number of phase values.");
@@ -190,7 +190,7 @@ fn run_permutation(filename: &str, phases: Vec<i32>) -> Result<i32, &str> {
 
         let input_buffer: &mut VecDeque<i32>;
         let output_buffer: &mut VecDeque<i32>;
-        if i < 4 {
+        if !feedback || i < 4 {
             let (input_buffers, output_buffers) = buffers.split_at_mut(i + 1);
             input_buffer = &mut input_buffers[input_buffers.len() - 1];
             output_buffer = &mut output_buffers[0];
@@ -208,48 +208,12 @@ fn run_permutation(filename: &str, phases: Vec<i32>) -> Result<i32, &str> {
     return Err("We shouldn't get here...");
 }
 
-fn run_sequence(filename: &str, phases: Vec<i32>) -> Result<i32, &str> {
-    const N: usize = 5;
-
-    let mut intcodes: Vec<IntCode> = vec![IntCode::new(filename); N];
-    let mut buffers: Vec<VecDeque<i32>> = vec![VecDeque::<i32>::new(); N + 1];
-
-    if phases.len() != N {
-        return Err("Wrong number of phase values.");
-    }
-
-    for (v, phase) in &mut buffers.iter_mut().zip(phases) {
-        v.push_back(phase);
-    }
-    buffers[0].push_back(0);
-
-    let mut signal: Option<i32>;
-    let mut intcode: &mut IntCode;
-    for i in 0..N {
-        intcode = &mut intcodes[i];
-
-        let input_buffer: &mut VecDeque<i32>;
-        let output_buffer: &mut VecDeque<i32>;
-
-        let (input_buffers, output_buffers) = buffers.split_at_mut(i + 1);
-        input_buffer = &mut input_buffers[input_buffers.len() - 1];
-        output_buffer = &mut output_buffers[0];
-
-        signal = intcode.run(input_buffer, output_buffer);
-
-        if signal.is_some() && i == N - 1 {
-            return signal.ok_or("No value in signal.");
-        }
-    }
-    return Err("We shouldn't get here...");
-}
-
 fn main() {
     let filename: &str = "../input.txt";
 
     let signal_p1: i32 = (0..5)
         .permutations(5)
-        .map(|phases| run_sequence(filename, phases).unwrap())
+        .map(|phases| run_amplifiers(filename, phases, false).unwrap())
         .collect::<Vec<i32>>()
         .into_iter()
         .max()
@@ -258,7 +222,7 @@ fn main() {
 
     let signal_p2: i32 = (5..10)
         .permutations(5)
-        .map(|phases| run_permutation(filename, phases).unwrap())
+        .map(|phases| run_amplifiers(filename, phases, true).unwrap())
         .collect::<Vec<i32>>()
         .into_iter()
         .max()
