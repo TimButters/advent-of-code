@@ -46,9 +46,33 @@ fn part1(nums: &[i32], w: usize, h: usize) -> usize {
 
 }
 
+fn set_image_value(nums: &mut [i32], idx: usize, value: i32) -> () {
+    if nums[idx] > -1 || value == 2 {
+        return;
+    }
+    nums[idx] = value;
+}
+
+fn part2(nums: &[i32], w: usize, h: usize) -> Vec<i32> {
+    let mut image = vec![-1; w * h];
+    let num_layers = nums.len() / (w * h);
+    for layer_idx in 0..num_layers {
+        let layer = get_layer(layer_idx, nums, w, h);
+        for (idx, value) in layer.iter().enumerate() {
+            set_image_value(&mut image, idx, *value);
+        }
+    }
+    return image;
+}
+
 fn main() {
     let filename = "../input.txt";
     let nums: Vec<i32> = load_data(filename);
     let p1: usize = part1(&nums, 25, 6);
     println!("{p1}");
+
+    let p2: Vec<i32> = part2(&nums, 25, 6);
+    for i in (0..25*6).step_by(25) {
+        println!("{:?}", &p2[i..i+25]);
+    }
 }
