@@ -35,7 +35,7 @@ impl IntCode {
 
         intcode.op_has_dest.insert('1', true);
         intcode.op_has_dest.insert('2', true);
-        intcode.op_has_dest.insert('3', false);
+        intcode.op_has_dest.insert('3', true);
         intcode.op_has_dest.insert('4', false);
         intcode.op_has_dest.insert('5', false);
         intcode.op_has_dest.insert('6', false);
@@ -109,40 +109,44 @@ impl IntCode {
         let num_args = self.op_arg_nums[opcode];
         let mut increment = num_args + 1;
 
-        //println!("Opcode {}", opcode);
-        //println!("Params {:?}\n", param_modes);
         if param_modes.len() < num_args {
             for _ in 0..(num_args - param_modes.len()) {
                 param_modes.push(&'0');
             }
         }
-        if self.op_has_dest[opcode] {
-            param_modes.push(&'1');
-            increment += 1;
-        }
 
         let mut args = Vec::<i64>::new();
         for (i, c) in param_modes.iter().enumerate() {
-            let v = self.program[self._position + i + 1]
-                .parse::<i64>()
-                .expect("Error parsing string to int.");
-            if **c == '0' {
-                args.push(
-                    self.program[v as usize]
-                        .parse::<i64>()
-                        .expect("Error parsing int"),
-                );
-            } else if **c == '1' {
-                args.push(v);
-            } else if **c == '2' {
-                args.push(
-                    self.program[(self._relative_base + v) as usize]
+            if i < num_args {
+                let v = self.program[self._position + i + 1]
                     .parse::<i64>()
-                    .expect("Error parsing int")
-                ); 
-            } else {
-                panic!("Unrecognised param mode {}",c);
+                    .expect("Error parsing string to int.");
+                if **c == '0' {
+                    args.push(
+                        self.program[v as usize]
+                            .parse::<i64>()
+                            .expect("Error parsing int"),
+                    );
+                } else if **c == '1' {
+                    args.push(v);
+                } else if **c == '2' {
+                    args.push(
+                        self.program[(self._relative_base + v) as usize]
+                        .parse::<i64>()
+                        .expect("Error parsing int")
+                    ); 
+                } else {
+                    panic!("Unrecognised param mode {}",c);
+                }
             }
+        }
+        if self.op_has_dest[opcode] {
+            let mut dest = self.program[self._position + num_args + 1].parse::<i64>().expect("Could not parse");
+            if param_modes.len() > num_args && param_modes[num_args] == &'2' {
+                dest += self._relative_base;
+            }
+            args.push(dest);
+            increment += 1;
         }
 
         if *opcode == '1' {
@@ -155,14 +159,7 @@ impl IntCode {
                 return None;
             }
             let input = input_buffer.pop_front().expect("No inputs to read.");
-            let mut dest = self.program[self._position + 1]
-                .parse::<i64>()
-                .expect("Error parsing string to int.");
-            if param_modes.len() > 0 && param_modes[param_modes.len()-1] == &'2' {
-                dest += self._relative_base;
-            }
-            self.program[dest as usize] = input.to_string();
-            increment += 1;
+            self.program[args[0] as usize] = input.to_string();
         } else if *opcode == '4' {
             output_buffer.push_back(args[0]);
             println!("{}", args[0]);
@@ -201,5 +198,5 @@ fn main() {
     input.push_back(1);
     let mut output = VecDeque::<i64>::new();
     let output = intcode.run(&mut input, &mut output);
-    println!("{}", output.expect("There should be a value"));
+    println!("Part 1: {}", output.expect("There should be a value"));
 }
