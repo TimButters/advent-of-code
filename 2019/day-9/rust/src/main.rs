@@ -199,4 +199,11 @@ fn main() {
     let mut output = VecDeque::<i64>::new();
     let output = intcode.run(&mut input, &mut output);
     println!("Part 1: {}", output.expect("There should be a value"));
+    
+    let mut intcode = IntCode::new(filename);
+    let mut input = VecDeque::<i64>::new();
+    input.push_back(2);
+    let mut output = VecDeque::<i64>::new();
+    let output = intcode.run(&mut input, &mut output);
+    println!("Part 2: {}", output.expect("There should be a value"));
 }
