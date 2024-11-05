@@ -88,8 +88,7 @@ impl IntCode {
                 param_modes = Vec::<&char>::new();
             }
 
-            let increment =
-                self.process_operation(opcode, param_modes, input_buffer, output_buffer);
+            let increment = self.process_operation(opcode, param_modes, input_buffer, output_buffer);
 
             if increment.is_some() {
                 self._position += increment.unwrap();
@@ -110,38 +109,30 @@ impl IntCode {
         let mut increment = num_args + 1;
 
         if param_modes.len() < num_args {
-            for _ in 0..(num_args - param_modes.len()) {
-                param_modes.push(&'0');
-            }
+            param_modes.append(&mut vec![&'0'; num_args - param_modes.len()]);
         }
 
         let mut args = Vec::<i64>::new();
-        for (i, c) in param_modes.iter().enumerate() {
-            if i < num_args {
-                let v = self.program[self._position + i + 1]
-                    .parse::<i64>()
-                    .expect("Error parsing string to int.");
-                if **c == '0' {
-                    args.push(
-                        self.program[v as usize]
-                            .parse::<i64>()
-                            .expect("Error parsing int"),
-                    );
-                } else if **c == '1' {
-                    args.push(v);
-                } else if **c == '2' {
-                    args.push(
-                        self.program[(self._relative_base + v) as usize]
-                        .parse::<i64>()
-                        .expect("Error parsing int")
-                    ); 
-                } else {
-                    panic!("Unrecognised param mode {}",c);
+        for (i, c) in param_modes[0..num_args].iter().enumerate() {
+            let v = self.program[self._position + i + 1]
+                .parse::<i64>()
+                .expect("Error parsing string to int.");
+
+            args.push(
+                match **c {
+                    '0' => self.program[v as usize].parse::<i64>().expect("Error parsing int"),
+                    '1' => v,
+                    '2' => self.program[(self._relative_base + v) as usize].parse::<i64>().expect("Error parsing int"),
+                    _ => panic!("Unrecognised param mode {}", c),
                 }
-            }
+            );
         }
+
         if self.op_has_dest[opcode] {
-            let mut dest = self.program[self._position + num_args + 1].parse::<i64>().expect("Could not parse");
+            let mut dest = self.program[self._position + num_args + 1]
+                .parse::<i64>()
+                .expect("Could not parse");
+
             if param_modes.len() > num_args && param_modes[num_args] == &'2' {
                 dest += self._relative_base;
             }
