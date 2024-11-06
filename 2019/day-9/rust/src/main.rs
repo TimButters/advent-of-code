@@ -99,16 +99,12 @@ impl IntCode {
         }
     }
 
-    fn process_operation(
-        &mut self,
-        opcode: &char,
-        mut param_modes: Vec<&char>,
-        input_buffer: &mut VecDeque<i64>,
-        output_buffer: &mut VecDeque<i64>,
-    ) -> Option<usize> {
-        let num_args = self.op_arg_nums[opcode];
-        let mut increment = num_args + 1;
-
+    fn process_params(
+        &self,
+        param_modes: &mut Vec<&char>,
+        num_args: usize,
+        has_dest: bool,
+    ) -> Vec<i64> {
         if param_modes.len() < num_args {
             param_modes.append(&mut vec![&'0'; num_args - param_modes.len()]);
         }
@@ -131,7 +127,7 @@ impl IntCode {
             });
         }
 
-        if self.op_has_dest[opcode] {
+        if has_dest {
             let mut dest = self.program[self._position + num_args + 1]
                 .parse::<i64>()
                 .expect("Could not parse");
@@ -140,8 +136,25 @@ impl IntCode {
                 dest += self._relative_base;
             }
             args.push(dest);
-            increment += 1;
         }
+        return args;
+    }
+
+    fn process_operation(
+        &mut self,
+        opcode: &char,
+        mut param_modes: Vec<&char>,
+        input_buffer: &mut VecDeque<i64>,
+        output_buffer: &mut VecDeque<i64>,
+    ) -> Option<usize> {
+        let num_args = self.op_arg_nums[opcode];
+        let has_dest = self.op_has_dest[opcode];
+        let mut increment = match has_dest {
+            true => num_args + 2,
+            false => num_args + 1,
+        };
+
+        let args = self.process_params(&mut param_modes, num_args, has_dest);
 
         match *opcode {
             '1' => self.program[args[2] as usize] = (args[0] + args[1]).to_string(),
@@ -165,17 +178,15 @@ impl IntCode {
                 }
             }
             '7' => {
-                self.program[args[2] as usize] = if args[0] < args[1] {
-                    String::from('1')
-                } else {
-                    String::from('0')
+                self.program[args[2] as usize] = match args[0] < args[1] {
+                    true => String::from('1'),
+                    false => String::from('0'),
                 };
             }
             '8' => {
-                self.program[args[2] as usize] = if args[0] == args[1] {
-                    String::from('1')
-                } else {
-                    String::from('0')
+                self.program[args[2] as usize] = match args[0] == args[1] {
+                    true => String::from('1'),
+                    false => String::from('0'),
                 };
             }
             '9' => self._relative_base += args[0],
