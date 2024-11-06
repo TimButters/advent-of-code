@@ -143,41 +143,43 @@ impl IntCode {
             increment += 1;
         }
 
-        if *opcode == '1' {
-            self.program[args[2] as usize] = (args[0] + args[1]).to_string();
-        } else if *opcode == '2' {
-            self.program[args[2] as usize] = (args[0] * args[1]).to_string();
-        } else if *opcode == '3' {
-            if input_buffer.is_empty() {
-                println!("Empty Buffer");
-                return None;
+        match *opcode {
+            '1' => self.program[args[2] as usize] = (args[0] + args[1]).to_string(),
+            '2' => self.program[args[2] as usize] = (args[0] * args[1]).to_string(),
+            '3' => {
+                if input_buffer.is_empty() {
+                    println!("Empty Buffer");
+                    return None;
+                }
+                let input = input_buffer.pop_front().expect("No inputs to read.");
+                self.program[args[0] as usize] = input.to_string();
             }
-            let input = input_buffer.pop_front().expect("No inputs to read.");
-            self.program[args[0] as usize] = input.to_string();
-        } else if *opcode == '4' {
-            output_buffer.push_back(args[0]);
-            println!("{}", args[0]);
-        } else if *opcode == '5' || *opcode == '6' {
-            if (*opcode == '5' && args[0] != 0) || (*opcode == '6' && args[0] == 0) {
-                self._position = usize::try_from(args[1]).expect("Error converting to usize.");
-                increment = 0;
+            '4' => {
+                output_buffer.push_back(args[0]);
+                println!("{}", args[0]);
             }
-        } else if *opcode == '7' {
-            self.program[args[2] as usize] = if args[0] < args[1] {
-                String::from('1')
-            } else {
-                String::from('0')
-            };
-        } else if *opcode == '8' {
-            self.program[args[2] as usize] = if args[0] == args[1] {
-                String::from('1')
-            } else {
-                String::from('0')
-            };
-        } else if *opcode == '9' {
-            self._relative_base += args[0];
-        } else {
-            panic!("What is this opcode? {}", opcode);
+            '5' | '6' => {
+                if (*opcode == '5' && args[0] != 0) || (*opcode == '6' && args[0] == 0) {
+                    self._position = usize::try_from(args[1]).expect("Error converting to usize.");
+                    increment = 0;
+                }
+            }
+            '7' => {
+                self.program[args[2] as usize] = if args[0] < args[1] {
+                    String::from('1')
+                } else {
+                    String::from('0')
+                };
+            }
+            '8' => {
+                self.program[args[2] as usize] = if args[0] == args[1] {
+                    String::from('1')
+                } else {
+                    String::from('0')
+                };
+            }
+            '9' => self._relative_base += args[0],
+            _ => panic!("What is this opcode? {}", opcode),
         }
 
         return Some(increment);
