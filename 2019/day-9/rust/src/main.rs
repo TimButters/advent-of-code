@@ -88,7 +88,8 @@ impl IntCode {
                 param_modes = Vec::<&char>::new();
             }
 
-            let increment = self.process_operation(opcode, param_modes, input_buffer, output_buffer);
+            let increment =
+                self.process_operation(opcode, param_modes, input_buffer, output_buffer);
 
             if increment.is_some() {
                 self._position += increment.unwrap();
@@ -118,14 +119,16 @@ impl IntCode {
                 .parse::<i64>()
                 .expect("Error parsing string to int.");
 
-            args.push(
-                match **c {
-                    '0' => self.program[v as usize].parse::<i64>().expect("Error parsing int"),
-                    '1' => v,
-                    '2' => self.program[(self._relative_base + v) as usize].parse::<i64>().expect("Error parsing int"),
-                    _ => panic!("Unrecognised param mode {}", c),
-                }
-            );
+            args.push(match **c {
+                '0' => self.program[v as usize]
+                    .parse::<i64>()
+                    .expect("Error parsing int"),
+                '1' => v,
+                '2' => self.program[(self._relative_base + v) as usize]
+                    .parse::<i64>()
+                    .expect("Error parsing int"),
+                _ => panic!("Unrecognised param mode {}", c),
+            });
         }
 
         if self.op_has_dest[opcode] {
@@ -190,7 +193,7 @@ fn main() {
     let mut output = VecDeque::<i64>::new();
     let output = intcode.run(&mut input, &mut output);
     println!("Part 1: {}", output.expect("There should be a value"));
-    
+
     let mut intcode = IntCode::new(filename);
     let mut input = VecDeque::<i64>::new();
     input.push_back(2);
