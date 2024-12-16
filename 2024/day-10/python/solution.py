@@ -1,6 +1,3 @@
-from collections import deque
-
-
 Point = tuple[int, int]
 
 
@@ -30,25 +27,27 @@ class Graph:
 
     def find_children(self, coord: Point, value: int) -> list[Node]:
         x, y = coord
-        candidates = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
-        return [node for node in self.nodes.values() if node.coord in candidates and node.value == value + 1]
+        candidates = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+        return [
+            node
+            for node in self.nodes.values()
+            if node.coord in candidates and node.value == value + 1
+        ]
 
-    def search(self, start: Node, finals: list[Point] = None):
+    def search(self, node: Node, finals: list[Point] = None):
         if finals is None:
             finals = []
 
-        if start.value == 9:
-            return finals.append(start.coord)
+        if node.value == 9:
+            return finals.append(node.coord)
 
-        if not start.children:
+        if not node.children:
             return [None]
 
-        for child in start.children:
+        for child in node.children:
             self.search(child, finals)
 
         return finals
-
-
 
 
 def load_input(filename: str) -> list[list[int]]:
@@ -68,29 +67,12 @@ def build_graph(mapping: list[list[int]]):
     return graph
 
 
-# def find_hikes(graph: Graph):
-#     start_points = [node for _, node in graph.nodes.items() if node.value == 0]
-#     print(len(start_points))
-#     hikes = 0
-#     for start in start_points:
-#         score = set()
-#         curr_node = start
-#         while curr_node.value != 9:
-#             if not routes:
-#                 routes = deque([c for c in curr_node.children])
-#             curr_node = routes.pop()
-#             if curr_node.value == 9:
-#                 score.add(curr_node.coord)
-#         hikes += len(score)
-#     return hikes
-
-
 def find_hikes(graph: Graph):
     start_points = [node for _, node in graph.nodes.items() if node.value == 0]
     hikes = []
     for point in start_points:
-        score = graph.search(point, [])
-        hikes.append(len(set(score)))
+        score = graph.search(point)
+        hikes.append((len(set(score)), len(score)))
     return hikes
 
 
@@ -99,4 +81,5 @@ if __name__ == "__main__":
     mapping = load_input(filename)
     graph = build_graph(mapping)
     scores = find_hikes(graph)
-    print(f"Part 1: {sum(scores)}")
+    print(f"Part 1: {sum([s[0] for s in scores])}")
+    print(f"Part 2: {sum([s[1] for s in scores])}")
