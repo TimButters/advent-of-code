@@ -86,15 +86,16 @@ if __name__ == "__main__":
     print(f"Part 1: {len(path)}")
 
     loops = 0
-    for y in range(grid.max_y):
-        for x in range(grid.max_x):
-            grid = load_input(filename)
-            if (x, y) in grid.obstacles:
-                continue
-            grid.obstacles.append((x, y))
-            path = track_guard(grid)
-            if not path:
-                loops += 1
-            grid.obstacles = grid.obstacles[0:-1]
+    # for y in range(grid.max_y):
+    #     for x in range(grid.max_x):
+    for point in path:
+        grid = load_input(filename)
+        if point in grid.obstacles:
+            continue
+        grid.obstacles.append(point)
+        path = track_guard(grid)
+        if not path:
+            loops += 1
+        grid.obstacles = grid.obstacles[0:-1]
     print(f"Part 2: {loops}")
 
