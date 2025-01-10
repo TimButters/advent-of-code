@@ -57,15 +57,15 @@ class Computer:
 
     def run(self):
         while self.ip < len(self.program):
-            op, operand = self.program[self.ip: self.ip + 2]
+            op, operand = self.program[self.ip : self.ip + 2]
             self.opcode(op, operand)
 
     def run_match(self):
         prog = list(map(str, self.program))
         while self.ip < len(self.program):
-            op, operand = self.program[self.ip: self.ip + 2]
+            op, operand = self.program[self.ip : self.ip + 2]
             self.opcode(op, operand)
-            if self.output and (self.output != prog[0:len(self.output)]):
+            if self.output and (self.output != prog[0 : len(self.output)]):
                 return False
         return True if len(self.output) == len(prog) else False
 
@@ -104,4 +104,3 @@ if __name__ == "__main__":
     output = ",".join(computer.output)
     print(f"Part 1: {output}")
     print(f"Part 2: {part2(computer, init_b, init_c)}")
-
