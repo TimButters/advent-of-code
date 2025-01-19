@@ -1,6 +1,3 @@
-from itertools import groupby
-
-
 Point = tuple[int, int]
 Blocks = list[set[Point]]
 
@@ -60,48 +57,80 @@ def perimeter_fences(mapping: dict[str, Blocks]):
     return perimeters
 
 
-# def num_sides(points: list[Point], axis, output):
-#     """NO: Doesn't work as doesn't account for blocks of the same letter"""
-#     ps = sorted(points, key=lambda x: x[axis])
-#     diffs = [b[axis] - a[axis] for a, b in zip(ps, ps[1:])]
-#     onside = False
-#     num_side = 0
-#     for diff in diffs:
-#         if diff == 1:
-#             if not onside:
-#                 num_side += 1
-#                 onside = True
-#         else:
-#             onside = False
-#     if output:
-#         print(axis, num_side, list(ps))
-#     return num_side
-
-
-def is_vertex(point: Point, points: list[Point]) -> bool:
+def is_vertex(point: Point, points: list[Point]) -> int:
     x, y = point
 
+    ## Thin strips and lone blocks
+    surrounding_cross = {(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)}
+    surrounding_block = {
+        (x + 1, y),
+        (x - 1, y),
+        (x, y + 1),
+        (x, y - 1),
+        (x - 1, y - 1),
+        (x - 1, y + 1),
+        (x + 1, y + 1),
+        (x + 1, y - 1),
+    }
+    cross_overlap = surrounding_cross.intersection(points)
+    block_overlap = surrounding_block.intersection(points)
+    horizontal_overlap = len(cross_overlap.intersection({(x - 1, y), (x + 1, y)})) == 2
+    vertical_overlap = len(cross_overlap.intersection({(x, y - 1), (x, y + 1)})) == 2
+
+    if len(cross_overlap) == 0:
+        print(point, "isolated")
+        return 4
+
+    if len(cross_overlap) == 1:
+        print(point, "jetty")
+        return 2
+
+    if len(block_overlap) == 2 and not horizontal_overlap and not vertical_overlap:
+        print(point, "L")
+        return 2
+
+    ## Blocks of letters
     # . _
     # .|x
-    if (x+1, y) in points and (x, y+1) in points and ((x-1, y-1) not in points or (x+1, y+1) not in points):
-        return True
+    if (
+        (x + 1, y) in points
+        and (x, y + 1) in points
+        and ((x - 1, y - 1) not in points or (x + 1, y + 1) not in points)
+    ):
+        print(point, 1)
+        return 1
 
     #  _ .
     #  x|.
-    if (x-1, y) in points and (x, y+1) in points and ((x+1, y-1) not in points or (x-1, y+1) not in points):
-        return True
+    if (
+        (x - 1, y) in points
+        and (x, y + 1) in points
+        and ((x + 1, y - 1) not in points or (x - 1, y + 1) not in points)
+    ):
+        print(point, 2)
+        return 1
 
     #  x|.
     #  - .
-    if (x-1, y) in points and (x, y-1) in points and ((x+1, y+1) not in points or (x-1, y-1) not in points):
-        return True
+    if (
+        (x - 1, y) in points
+        and (x, y - 1) in points
+        and ((x + 1, y + 1) not in points or (x - 1, y - 1) not in points)
+    ):
+        print(point, 3)
+        return 1
 
     #  .|x
     #  . -
-    if (x+1, y) in points and (x, y-1) in points and ((x+1, y-1) not in points or (x-1, y+1) not in points):
-        return True
+    if (
+        (x + 1, y) in points
+        and (x, y - 1) in points
+        and ((x + 1, y - 1) not in points or (x - 1, y + 1) not in points)
+    ):
+        print(point, 4)
+        return 1
 
-    return False
+    return 0
 
 
 def num_vertices(points: list[Point]) -> int:
