@@ -78,15 +78,12 @@ def is_vertex(point: Point, points: list[Point]) -> int:
     vertical_overlap = len(cross_overlap.intersection({(x, y - 1), (x, y + 1)})) == 2
 
     if len(cross_overlap) == 0:
-        # print(point, "isolated")
         return 4
 
     if len(cross_overlap) == 1:
-        # print(point, "jetty")
         return 2
 
     if len(block_overlap) == 2 and not horizontal_overlap and not vertical_overlap:
-        # print(point, "L")
         return 2
 
     ## Blocks of letters
@@ -98,7 +95,6 @@ def is_vertex(point: Point, points: list[Point]) -> int:
         and (x, y + 1) in points
         and (x + 1, y + 1) not in points
     ):
-        # print(point, 1)
         count += 1
 
     # x x
@@ -106,9 +102,8 @@ def is_vertex(point: Point, points: list[Point]) -> int:
     if (
         (x - 1, y) not in points
         and (x, y - 1) not in points
-        and (x - 1, y - 1) not in points
+        #and (x - 1, y - 1) not in points
     ):
-        # print(point, 1.5)
         count += 1
 
     #  _ .
@@ -118,7 +113,6 @@ def is_vertex(point: Point, points: list[Point]) -> int:
         and (x, y + 1) in points
         and (x - 1, y + 1) not in points
     ):
-        # print(point, 2)
         count += 1
 
     # x x
@@ -126,9 +120,8 @@ def is_vertex(point: Point, points: list[Point]) -> int:
     if (
         (x + 1, y) not in points
         and (x, y - 1) not in points
-        and (x + 1, y - 1) not in points
+        #and (x + 1, y - 1) not in points
     ):
-        # print(point, 2.5)
         count += 1
 
     #  x|.
@@ -138,7 +131,6 @@ def is_vertex(point: Point, points: list[Point]) -> int:
         and (x, y - 1) in points
         and (x - 1, y - 1) not in points
     ):
-        # print(point, 3)
         count += 1
 
     # . x
@@ -146,9 +138,8 @@ def is_vertex(point: Point, points: list[Point]) -> int:
     if (
         (x + 1, y) not in points
         and (x, y + 1) not in points
-        and (x + 1, y + 1) not in points
+        #and (x + 1, y + 1) not in points
     ):
-        # print(point, 3.5)
         count += 1
 
     #  .|x
@@ -158,7 +149,6 @@ def is_vertex(point: Point, points: list[Point]) -> int:
         and (x, y - 1) in points
         and (x + 1, y - 1) not in points
     ):
-        # print(point, 4)
         count += 1
 
     # x .
@@ -166,9 +156,8 @@ def is_vertex(point: Point, points: list[Point]) -> int:
     if (
         (x - 1, y) not in points
         and (x, y + 1) not in points
-        and (x - 1, y + 1) not in points
+        #and (x - 1, y + 1) not in points
     ):
-        # print(point, 4.5)
         count += 1
 
     return count
@@ -183,13 +172,12 @@ def bulk_discount(mapping: dict[str, Blocks]):
     for c, groups in mapping.items():
         for group in groups:
             sides = num_vertices(group)
-            # print(f"{c}: \t{len(group)}\t{sides}")
             perimeters.append(sides * len(group))
     return perimeters
 
 
 if __name__ == "__main__":
-    filename = "test_input3.txt"
+    filename = "input.txt"
     topology = load_input(filename)
     points = build_map(topology)
     perimeters = perimeter_fences(points)
