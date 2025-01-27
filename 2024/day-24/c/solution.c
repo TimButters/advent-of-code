@@ -15,31 +15,14 @@ struct Wire {
     int value;
 };
 
-size_t wire_index(char** wires, size_t num_wires, char* wire)
+size_t wire_index(char wires[][100], size_t num_wires, char* wire)
 {
     for (size_t i = 0; i < num_wires; ++i) {
-        if (strcmp(wires[i], wire)) {
+        if (strcmp(wires[i], wire) == 0) {
             return i;
         }
     }
     return num_wires + 1;
-}
-
-int run_gate(struct Gate* gate, int* wire_values, char** wires, size_t num_wires)
-{
-    int input1 = wire_values[wire_index(wires, num_wires, gate->input1)];
-    int input2 = wire_values[wire_index(wires, num_wires, gate->input2)];
-    if (input1 == -1 || input2 == -1) {
-        return -1;
-    }
-
-    if (strcmp(gate->type, "AND") == 0) {
-        return input1 && input2;
-    } else if (strcmp(gate->type, "OR") == 0) {
-        return input1 || input2;
-    } else {
-        return input1 != input2;
-    }
 }
 
 struct Wire parse_wire(char* line)
@@ -79,6 +62,23 @@ struct Gate parse_gate(char* line)
     strcpy(gate.input2, tokens[2]);
     strcpy(gate.output, tokens[4]);
     return gate;
+}
+
+int run_gate(struct Gate* gate, int* wire_values, char wires[][100], size_t num_wires)
+{
+    int input1 = wire_values[wire_index(wires, num_wires, gate->input1)];
+    int input2 = wire_values[wire_index(wires, num_wires, gate->input2)];
+    if (input1 == -1 || input2 == -1) {
+        return -1;
+    }
+
+    if (strcmp(gate->type, "AND") == 0) {
+        return input1 && input2;
+    } else if (strcmp(gate->type, "OR") == 0) {
+        return input1 || input2;
+    } else {
+        return input1 != input2;
+    }
 }
 
 int main(int argc, char** argv)
@@ -130,6 +130,7 @@ int main(int argc, char** argv)
     printf("\nNumber of gates: %lu\n", num_gates);
     for (int i = 0; i < num_gates; ++i) {
         printf("%s\t%s\t%s\t%s\n", gates[i].input1, gates[i].input2, gates[i].type, gates[i].output);
+        printf("%d\n", run_gate(&gates[i], wire_values, wires, num_wires));
     }
 
     return 0;
