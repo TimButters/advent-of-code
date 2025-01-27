@@ -11,3 +11,4 @@ test_input*.txt
 *.bin
 target/
 *.lock
+a.out
