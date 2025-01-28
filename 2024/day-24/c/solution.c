@@ -153,23 +153,16 @@ void run_gates(char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates,
     }
 }
 
-int main(int argc, char** argv)
-{
+void load_input(char* filename, char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates, size_t* num_wires, size_t* num_gates) {
     FILE* fptr;
     char* line = NULL;
     size_t len = 0;
     ssize_t read = 0;
 
-    size_t num_wires = 0;
-    size_t num_gates = 0;
-    struct Gate gates[MAX_GATES];
-    char wires[MAX_WIRES][LABEL_LENGTH];
-    int wire_values[MAX_WIRES];
-
-    fptr = fopen("../input.txt", "r");
+    fptr = fopen(filename, "r");
     if (fptr == NULL) {
         printf("Could not open file.\n");
-        return 1;
+        return;
     }
 
     struct Wire wire;
@@ -182,24 +175,40 @@ int main(int argc, char** argv)
 
         if (first_section) {
             wire = parse_wire(line);
-            strcpy(wires[num_wires], wire.label);
-            wire_values[num_wires] = wire.value;
-            num_wires++;
+            strcpy(wires[*num_wires], wire.label);
+            wire_values[*num_wires] = wire.value;
+            (*num_wires)++;
         } else {
-            gates[num_gates] = parse_gate(line);
+            gates[*num_gates] = parse_gate(line);
             char wire1[LABEL_LENGTH];
             char wire2[LABEL_LENGTH];
             char wire3[LABEL_LENGTH];
-            strcpy(wire1, gates[num_gates].input1);
-            strcpy(wire2, gates[num_gates].input2);
-            strcpy(wire3, gates[num_gates].output);
-            num_wires = add_wire(wire1, wires, wire_values, num_wires);
-            num_wires = add_wire(wire2, wires, wire_values, num_wires);
-            num_wires = add_wire(wire3, wires, wire_values, num_wires);
-            num_gates++;
+            strcpy(wire1, gates[*num_gates].input1);
+            strcpy(wire2, gates[*num_gates].input2);
+            strcpy(wire3, gates[*num_gates].output);
+            *num_wires = add_wire(wire1, wires, wire_values, *num_wires);
+            *num_wires = add_wire(wire2, wires, wire_values, *num_wires);
+            *num_wires = add_wire(wire3, wires, wire_values, *num_wires);
+            (*num_gates)++;
         }
     }
     fclose(fptr);
+}
+
+int main(int argc, char** argv)
+{
+    char wires[MAX_WIRES][LABEL_LENGTH];
+    int wire_values[MAX_WIRES];
+    struct Gate gates[MAX_GATES];
+    size_t num_wires = 0;
+    size_t num_gates = 0;
+
+    if (argc < 2) {
+        printf("Provide an input file\n");
+        return 1;
+    }
+
+    load_input(argv[1], wires, wire_values, gates, &num_wires, &num_gates);
 
     printf("Number of wires: %lu\n", num_wires);
     printf("Number of gates: %lu\n\n", num_gates);
