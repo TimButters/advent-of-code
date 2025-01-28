@@ -3,20 +3,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_WIRES 350
+#define MAX_GATES 250
+#define LABEL_LENGTH 10
+
 struct Gate {
-    char input1[10];
-    char input2[10];
-    char output[10];
+    char input1[LABEL_LENGTH];
+    char input2[LABEL_LENGTH];
+    char output[LABEL_LENGTH];
     char type[4];
 };
 
 struct Wire {
-    char label[100];
+    char label[LABEL_LENGTH];
     int value;
 };
 
 struct WireSet {
-    struct Wire wires[300];
+    struct Wire wires[MAX_WIRES];
     size_t num_wires;
 };
 
@@ -24,11 +28,10 @@ int compare_wires(const void* wire1, const void* wire2)
 {
     struct Wire* w1 = (struct Wire*)wire1;
     struct Wire* w2 = (struct Wire*)wire2;
-    // printf("%s, %s: %d\n", w1->label, w2->label, strcmp(w1->label, w2->label));
     return strcmp(w1->label, w2->label);
 }
 
-struct WireSet build_zs(char wires[][100], int* wire_values, size_t num_wires)
+struct WireSet build_zs(char wires[][LABEL_LENGTH], int* wire_values, size_t num_wires)
 {
     struct WireSet wire_set;
     struct Wire this_wire;
@@ -45,7 +48,7 @@ struct WireSet build_zs(char wires[][100], int* wire_values, size_t num_wires)
     return wire_set;
 }
 
-size_t wire_index(char wires[][100], size_t num_wires, char* wire)
+size_t wire_index(char wires[][LABEL_LENGTH], size_t num_wires, char* wire)
 {
     for (size_t i = 0; i < num_wires; ++i) {
         if (strcmp(wires[i], wire) == 0) {
@@ -58,7 +61,7 @@ size_t wire_index(char wires[][100], size_t num_wires, char* wire)
 struct Wire parse_wire(char* line)
 {
     char* pch;
-    char label[10];
+    char label[LABEL_LENGTH];
     char value[5];
 
     size_t token_count = 0;
@@ -96,7 +99,7 @@ struct Gate parse_gate(char* line)
     return gate;
 }
 
-int add_wire(char* label, char wires[][100], int* wire_values, size_t num_wires)
+int add_wire(char* label, char wires[][LABEL_LENGTH], int* wire_values, size_t num_wires)
 {
     size_t wire_idx = wire_index(wires, num_wires, label);
     if (wire_idx < num_wires) {
@@ -107,7 +110,7 @@ int add_wire(char* label, char wires[][100], int* wire_values, size_t num_wires)
     return num_wires + 1;
 }
 
-int run_gate(struct Gate* gate, int* wire_values, char wires[][100], size_t num_wires)
+int run_gate(struct Gate* gate, int* wire_values, char wires[][LABEL_LENGTH], size_t num_wires)
 {
     int value;
 
@@ -131,7 +134,7 @@ int run_gate(struct Gate* gate, int* wire_values, char wires[][100], size_t num_
     return value;
 }
 
-bool complete_zs(char wires[][100], int* wire_values, size_t num_wires)
+bool complete_zs(char wires[][LABEL_LENGTH], int* wire_values, size_t num_wires)
 {
     for (int i = 0; i < num_wires; ++i) {
         if (wires[i][0] == 'z' && wire_values[i] == -1) {
@@ -141,10 +144,17 @@ bool complete_zs(char wires[][100], int* wire_values, size_t num_wires)
     return true;
 }
 
+void run_gates(char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates, size_t num_wires, size_t num_gates)
+{
+    while (!complete_zs(wires, wire_values, num_wires)) {
+        for (int i = 0; i < num_gates; ++i) {
+            run_gate(&gates[i], wire_values, wires, num_wires);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
-    size_t MAX_WIRES = 300;
-
     FILE* fptr;
     char* line = NULL;
     size_t len = 0;
@@ -152,11 +162,11 @@ int main(int argc, char** argv)
 
     size_t num_wires = 0;
     size_t num_gates = 0;
-    struct Gate gates[400];
-    char wires[MAX_WIRES][100];
+    struct Gate gates[MAX_GATES];
+    char wires[MAX_WIRES][LABEL_LENGTH];
     int wire_values[MAX_WIRES];
 
-    fptr = fopen("../test_input2.txt", "r");
+    fptr = fopen("../input.txt", "r");
     if (fptr == NULL) {
         printf("Could not open file.\n");
         return 1;
@@ -177,9 +187,9 @@ int main(int argc, char** argv)
             num_wires++;
         } else {
             gates[num_gates] = parse_gate(line);
-            char wire1[100];
-            char wire2[100];
-            char wire3[100];
+            char wire1[LABEL_LENGTH];
+            char wire2[LABEL_LENGTH];
+            char wire3[LABEL_LENGTH];
             strcpy(wire1, gates[num_gates].input1);
             strcpy(wire2, gates[num_gates].input2);
             strcpy(wire3, gates[num_gates].output);
@@ -189,42 +199,22 @@ int main(int argc, char** argv)
             num_gates++;
         }
     }
-
     fclose(fptr);
 
-    // printf("Number of wires: %lu\n", num_wires);
-    // for (int i = 0; i < num_wires; ++i) {
-    //     printf("%s: %d\n", wires[i], wire_values[i]);
-    // }
-    // printf("\nNumber of gates: %lu\n", num_gates);
+    printf("Number of wires: %lu\n", num_wires);
+    printf("Number of gates: %lu\n\n", num_gates);
 
-    while (!complete_zs(wires, wire_values, num_wires)) {
-        for (int i = 0; i < num_gates; ++i) {
-            // printf("%s\t%s\t%s\t%s\n", gates[i].input1, gates[i].input2, gates[i].type, gates[i].output);
-            // printf("%d\n", run_gate(&gates[i], wire_values, wires, num_wires));
-            run_gate(&gates[i], wire_values, wires, num_wires);
-        }
-        // printf("===========================\n");
-    }
-
-    // for (int i = 0; i < num_wires; ++i) {
-    //     if (wires[i][0] == 'z') {
-    //         printf("%s: %d\n", wires[i], wire_values[i]);
-    //     }
-    // }
-    // printf("\n");
+    run_gates(wires, wire_values, gates, num_wires, num_gates);
 
     struct WireSet zs = build_zs(wires, wire_values, num_wires);
     qsort(zs.wires, zs.num_wires, sizeof(struct Wire), compare_wires);
 
-    char answer[10];
+    char answer[50];
     for (int i = 0; i < zs.num_wires; ++i) {
-        // printf("%s: %d\n", zs.wires[i].label, zs.wires[i].value);
         answer[zs.num_wires - 1 - i] = zs.wires[i].value + '0';
-        // printf("%c\n", answer[zs.num_wires - 1 - i]);
     }
 
-    printf("%ld\n", strtol(answer, NULL, 2));
+    printf("Part 1: %ld\n", strtol(answer, NULL, 2));
 
     return 0;
 }
