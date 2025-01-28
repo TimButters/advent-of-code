@@ -56,12 +56,25 @@ struct Gate parse_gate(char* line)
         token_count++;
     }
 
+    tokens[4][strcspn(tokens[4], "\n")] = 0;
+
     struct Gate gate;
     strcpy(gate.input1, tokens[0]);
     strcpy(gate.type, tokens[1]);
     strcpy(gate.input2, tokens[2]);
     strcpy(gate.output, tokens[4]);
     return gate;
+}
+
+int add_wire(char* label, char wires[][100], int* wire_values, size_t num_wires)
+{
+    size_t wire_idx = wire_index(wires, num_wires, label);
+    if (wire_idx < num_wires) {
+        return num_wires;
+    }
+    strcpy(wires[num_wires], label);
+    wire_values[num_wires] = -1;
+    return num_wires + 1;
 }
 
 int run_gate(struct Gate* gate, int* wire_values, char wires[][100], size_t num_wires)
@@ -117,6 +130,15 @@ int main(int argc, char** argv)
             num_wires++;
         } else {
             gates[num_gates] = parse_gate(line);
+            char wire1[100];
+            char wire2[100];
+            char wire3[100];
+            strcpy(wire1, gates[num_gates].input1);
+            strcpy(wire2, gates[num_gates].input2);
+            strcpy(wire3, gates[num_gates].output);
+            num_wires = add_wire(wire1, wires, wire_values, num_wires);
+            num_wires = add_wire(wire2, wires, wire_values, num_wires);
+            num_wires = add_wire(wire3, wires, wire_values, num_wires);
             num_gates++;
         }
     }
