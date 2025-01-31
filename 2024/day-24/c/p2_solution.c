@@ -173,12 +173,25 @@ size_t gate_index_by_output(GateSet gates, char* wire)
     return gates.num_gates + 1;
 }
 
-size_t gate_index_by_input(GateSet gates, char* wire, Gate** buffer)
+// size_t gate_index_by_input(GateSet gates, char* wire, Gate** buffer)
+// {
+//     size_t num_found = 0;
+//     for (size_t i = 0; i < gates.num_gates; ++i) {
+//         if (strcmp(gates.gates[i].input1, wire) == 0 || strcmp(gates.gates[i].input2, wire) ) {
+//             buffer[num_found] = &gates.gates[i];
+//             num_found++;
+//         }
+//     }
+//     return num_found;
+// }
+
+size_t gate_index_by_inputs(GateSet* gates, char* wire[2], Gate** buffer)
 {
     size_t num_found = 0;
-    for (size_t i = 0; i < gates.num_gates; ++i) {
-        if (strcmp(gates.gates[i].output, wire) == 0) {
-            buffer[num_found] = &gates.gates[i];
+    for (size_t i = 0; i < gates->num_gates; ++i) {
+        if ((strcmp(gates->gates[i].input1, wire[0]) == 0 && strcmp(gates->gates[i].input2, wire[1]) == 0)
+            || (strcmp(gates->gates[i].input2, wire[0]) == 0 && strcmp(gates->gates[i].input1, wire[1]) == 0)) {
+            buffer[num_found] = &gates->gates[i];
             num_found++;
         }
     }
@@ -192,9 +205,8 @@ void label_gates(GateSet* gates)
     Gate* buffer[2];
     size_t idx_xor1;
     size_t idx_xor2;
-    size_t idx_and1;
-    size_t idx_and2;
 
+    // XOR gate 1
     idx_xor1 = gate_index_by_output(*gates, wire);
 
     if (strcmp(gates->gates[idx_xor1].type, "XOR") != 0) {
@@ -205,6 +217,7 @@ void label_gates(GateSet* gates)
     printf("Correct gate found.\n");
     gates->gates[idx_xor1].group = group;
 
+    // XOR gate 2
     size_t test_idx1 = gate_index_by_output(*gates, gates->gates[idx_xor1].input1);
     size_t test_idx2 = gate_index_by_output(*gates, gates->gates[idx_xor1].input2);
 
@@ -218,6 +231,37 @@ void label_gates(GateSet* gates)
         printf("No suitable gate found\n");
         return;
     }
+
+    // AND gate 1
+    char* inputs[2] = { gates->gates[idx_xor1].input1, gates->gates[idx_xor1].input2 };
+    size_t num_found = gate_index_by_inputs(gates, inputs, buffer);
+    char or_input1[5];
+    for (int i = 0; i < num_found; ++i) {
+        if (strcmp(buffer[i]->type, "AND") == 0) {
+            buffer[i]->group = group;
+            strcpy(or_input1, buffer[i]->output);
+        }
+    }
+
+    // AND gate 2
+    char* inputs2[2] = { gates->gates[idx_xor2].input1, gates->gates[idx_xor2].input2 };
+    num_found = gate_index_by_inputs(gates, inputs2, buffer);
+    char or_input2[5];
+    for (int i = 0; i < num_found; ++i) {
+        if (strcmp(buffer[i]->type, "AND") == 0) {
+            buffer[i]->group = group;
+            strcpy(or_input2, buffer[i]->output);
+        }
+    }
+
+    // OR gate
+    char* or_inputs[2] = { or_input1, or_input2 };
+    num_found = gate_index_by_inputs(gates, or_inputs, buffer);
+    for (int i = 0; i < num_found; ++i) {
+        if (strcmp(buffer[i]->type, "OR") == 0) {
+            buffer[i]->group = group;
+        }
+    } 
 }
 
 int main(int argc, char** argv)
