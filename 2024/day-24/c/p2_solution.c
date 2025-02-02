@@ -12,6 +12,7 @@ typedef struct {
     char input2[LABEL_LENGTH];
     char output[LABEL_LENGTH];
     char type[4];
+    char label[6];
     int group;
 } Gate;
 
@@ -102,6 +103,7 @@ Gate parse_gate(char* line)
     strcpy(gate.type, tokens[1]);
     strcpy(gate.input2, tokens[2]);
     strcpy(gate.output, tokens[4]);
+    gate.group = -1;
     return gate;
 }
 
@@ -198,48 +200,86 @@ size_t gate_index_by_inputs(GateSet* gates, char* wire[2], Gate** buffer)
     return num_found;
 }
 
-void label_gates(GateSet* gates)
+void assign_group(Gate* gate, int group)
 {
-    int group = 1;
-    char* wire = "z01";
+    if (gate->group != -1 && gate->group != group) {
+        printf("Attempted gate switch groups: %d to %d\n", gate->group, group);
+        return;
+    }
+    gate->group = group;
+}
+
+void label_gates(GateSet* gates, char* wire, int group)
+{
     Gate* buffer[2];
     size_t idx_xor1;
     size_t idx_xor2;
+    size_t gates_found = 0;
+    size_t num_found;
+
+    char* input_bits[2] = { malloc(4), malloc(4) };
+    sprintf(input_bits[0], "x%02d", group);
+    sprintf(input_bits[1], "y%02d", group);
+    num_found = gate_index_by_inputs(gates, input_bits, buffer);
+    for (size_t i = 0; i < num_found; ++i) {
+        // buffer[i]->group = 0;
+        assign_group(buffer[i], group);
+        char label[6];
+        sprintf(label, "%s 1", buffer[i]->type);
+        strcpy(buffer[i]->label, label);
+        gates_found++;
+    }
+    free(input_bits[0]);
+    free(input_bits[1]);
+    if (group == 0) {
+        return;
+    }
 
     // XOR gate 1
     idx_xor1 = gate_index_by_output(*gates, wire);
 
+    fflush(stdout);
     if (strcmp(gates->gates[idx_xor1].type, "XOR") != 0) {
-        printf("Incorrect gate %s\n", gates->gates[idx_xor1].type);
+        // printf("Incorrect gate %s\n", gates->gates[idx_xor1].type);
         return;
     }
 
-    printf("Correct gate found.\n");
-    gates->gates[idx_xor1].group = group;
+    // gates->gates[idx_xor1].group = group;
+    assign_group(&gates->gates[idx_xor1], group);
+    strcpy(gates->gates[idx_xor1].label, "XOR 1");
+    gates_found++;
 
     // XOR gate 2
     size_t test_idx1 = gate_index_by_output(*gates, gates->gates[idx_xor1].input1);
     size_t test_idx2 = gate_index_by_output(*gates, gates->gates[idx_xor1].input2);
 
     if (strcmp(gates->gates[test_idx1].type, "XOR") == 0) {
-        gates->gates[test_idx1].group = group;
+        // gates->gates[test_idx1].group = group;
+        assign_group(&gates->gates[test_idx1], group);
+        strcpy(gates->gates[test_idx1].label, "XOR 2");
         idx_xor2 = test_idx1;
+        gates_found++;
     } else if (strcmp(gates->gates[test_idx2].type, "XOR") == 0) {
-        gates->gates[test_idx2].group = group;
+        // gates->gates[test_idx2].group = group;
+        assign_group(&gates->gates[test_idx2], group);
+        strcpy(gates->gates[test_idx2].label, "XOR 2");
         idx_xor2 = test_idx2;
+        gates_found++;
     } else {
-        printf("No suitable gate found\n");
-        return;
+        // printf("XOR_2 not gate found\n");
     }
 
     // AND gate 1
     char* inputs[2] = { gates->gates[idx_xor1].input1, gates->gates[idx_xor1].input2 };
-    size_t num_found = gate_index_by_inputs(gates, inputs, buffer);
+    num_found = gate_index_by_inputs(gates, inputs, buffer);
     char or_input1[5];
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "AND") == 0) {
-            buffer[i]->group = group;
+            // buffer[i]->group = group;
+            assign_group(buffer[i], group);
+            strcpy(buffer[i]->label, "AND 1");
             strcpy(or_input1, buffer[i]->output);
+            gates_found++;
         }
     }
 
@@ -249,8 +289,11 @@ void label_gates(GateSet* gates)
     char or_input2[5];
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "AND") == 0) {
-            buffer[i]->group = group;
+            // buffer[i]->group = group;
+            assign_group(buffer[i], group);
+            strcpy(buffer[i]->label, "AND 2");
             strcpy(or_input2, buffer[i]->output);
+            gates_found++;
         }
     }
 
@@ -259,9 +302,16 @@ void label_gates(GateSet* gates)
     num_found = gate_index_by_inputs(gates, or_inputs, buffer);
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "OR") == 0) {
-            buffer[i]->group = group;
+            // buffer[i]->group = group;
+            assign_group(buffer[i], group);
+            strcpy(buffer[i]->label, "OR");
+            gates_found++;
         }
-    } 
+    }
+}
+
+void label_gates_forwards(GateSet* gates, char* wire, int group)
+{
 }
 
 int main(int argc, char** argv)
@@ -281,11 +331,26 @@ int main(int argc, char** argv)
     printf("Number of wires: %lu\n", num_wires);
     printf("Number of gates: %lu\n\n", gates.num_gates);
 
-    label_gates(&gates);
+    char output_bit[4];
+    for (int i = 0; i < 45; ++i) {
+        sprintf(output_bit, "z%02d", i);
+        label_gates(&gates, output_bit, i);
+    }
 
-    for (size_t i = 0; i < gates.num_gates; ++i) {
-        if (gates.gates[i].group == 1) {
-            printf("%s\n", gates.gates[i].type);
+    printf("\n");
+    for (int group = -1; group < 45; ++group) {
+        char gate_str[30];
+        size_t group_gates = 0;
+        for (size_t i = 0; i < gates.num_gates; ++i) {
+            if (gates.gates[i].group == group) {
+        //         // sprintf(gate_str, "%s, ", gates.gates[i].label);
+        //         printf("%s, ", gates.gates[i].label);
+                group_gates++;
+            }
+        }
+        if ((group_gates < 5 && group != 0) || group == -1) {
+            printf("\n%d gates: %zu\n\n", group, group_gates);
+            // printf("%s\n\n", gate_str);
         }
     }
 
