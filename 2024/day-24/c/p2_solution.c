@@ -7,6 +7,16 @@
 #define MAX_GATES 250
 #define LABEL_LENGTH 10
 
+struct Wire {
+    char label[LABEL_LENGTH];
+    int value;
+};
+
+typedef struct {
+    struct Wire wires[MAX_WIRES];
+    size_t num_wires;
+} WireSet;
+
 typedef struct {
     char input1[LABEL_LENGTH];
     char input2[LABEL_LENGTH];
@@ -19,17 +29,9 @@ typedef struct {
 typedef struct {
     Gate gates[MAX_GATES];
     size_t num_gates;
+    Gate* swap_gates[MAX_GATES];
+    size_t num_swap_gates;
 } GateSet;
-
-struct Wire {
-    char label[LABEL_LENGTH];
-    int value;
-};
-
-struct WireSet {
-    struct Wire wires[MAX_WIRES];
-    size_t num_wires;
-};
 
 int compare_wires(const void* wire1, const void* wire2)
 {
@@ -38,9 +40,9 @@ int compare_wires(const void* wire1, const void* wire2)
     return strcmp(w1->label, w2->label);
 }
 
-struct WireSet build_zs(char wires[][LABEL_LENGTH], int* wire_values, size_t num_wires)
+WireSet build_zs(char wires[][LABEL_LENGTH], int* wire_values, size_t num_wires)
 {
-    struct WireSet wire_set;
+    WireSet wire_set;
     struct Wire this_wire;
     int num_zs = 0;
     for (int i = 0; i < num_wires; ++i) {
@@ -126,6 +128,7 @@ GateSet load_input(char* filename, char wires[][LABEL_LENGTH], int* wire_values,
     ssize_t read = 0;
     GateSet gates;
     gates.num_gates = 0;
+    gates.num_swap_gates = 0;
 
     fptr = fopen(filename, "r");
     if (fptr == NULL) {
@@ -175,18 +178,6 @@ size_t gate_index_by_output(GateSet gates, char* wire)
     return gates.num_gates + 1;
 }
 
-// size_t gate_index_by_input(GateSet gates, char* wire, Gate** buffer)
-// {
-//     size_t num_found = 0;
-//     for (size_t i = 0; i < gates.num_gates; ++i) {
-//         if (strcmp(gates.gates[i].input1, wire) == 0 || strcmp(gates.gates[i].input2, wire) ) {
-//             buffer[num_found] = &gates.gates[i];
-//             num_found++;
-//         }
-//     }
-//     return num_found;
-// }
-
 size_t gate_index_by_inputs(GateSet* gates, char* wire[2], Gate** buffer)
 {
     size_t num_found = 0;
@@ -200,10 +191,12 @@ size_t gate_index_by_inputs(GateSet* gates, char* wire[2], Gate** buffer)
     return num_found;
 }
 
-void assign_group(Gate* gate, int group)
+void assign_group(Gate* gate, int group, GateSet* gates)
 {
     if (gate->group != -1 && gate->group != group) {
         printf("Attempted gate switch groups: %d to %d\n", gate->group, group);
+        gates->swap_gates[gates->num_swap_gates] = gate;
+        gates->num_swap_gates++;
         return;
     }
     gate->group = group;
@@ -223,7 +216,7 @@ void label_gates(GateSet* gates, char* wire, int group)
     num_found = gate_index_by_inputs(gates, input_bits, buffer);
     for (size_t i = 0; i < num_found; ++i) {
         // buffer[i]->group = 0;
-        assign_group(buffer[i], group);
+        assign_group(buffer[i], group, gates);
         char label[6];
         sprintf(label, "%s 1", buffer[i]->type);
         strcpy(buffer[i]->label, label);
@@ -245,7 +238,7 @@ void label_gates(GateSet* gates, char* wire, int group)
     }
 
     // gates->gates[idx_xor1].group = group;
-    assign_group(&gates->gates[idx_xor1], group);
+    assign_group(&gates->gates[idx_xor1], group, gates);
     strcpy(gates->gates[idx_xor1].label, "XOR 1");
     gates_found++;
 
@@ -255,13 +248,13 @@ void label_gates(GateSet* gates, char* wire, int group)
 
     if (strcmp(gates->gates[test_idx1].type, "XOR") == 0) {
         // gates->gates[test_idx1].group = group;
-        assign_group(&gates->gates[test_idx1], group);
+        assign_group(&gates->gates[test_idx1], group, gates);
         strcpy(gates->gates[test_idx1].label, "XOR 2");
         idx_xor2 = test_idx1;
         gates_found++;
     } else if (strcmp(gates->gates[test_idx2].type, "XOR") == 0) {
         // gates->gates[test_idx2].group = group;
-        assign_group(&gates->gates[test_idx2], group);
+        assign_group(&gates->gates[test_idx2], group, gates);
         strcpy(gates->gates[test_idx2].label, "XOR 2");
         idx_xor2 = test_idx2;
         gates_found++;
@@ -276,7 +269,7 @@ void label_gates(GateSet* gates, char* wire, int group)
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "AND") == 0) {
             // buffer[i]->group = group;
-            assign_group(buffer[i], group);
+            assign_group(buffer[i], group, gates);
             strcpy(buffer[i]->label, "AND 1");
             strcpy(or_input1, buffer[i]->output);
             gates_found++;
@@ -290,7 +283,7 @@ void label_gates(GateSet* gates, char* wire, int group)
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "AND") == 0) {
             // buffer[i]->group = group;
-            assign_group(buffer[i], group);
+            assign_group(buffer[i], group, gates);
             strcpy(buffer[i]->label, "AND 2");
             strcpy(or_input2, buffer[i]->output);
             gates_found++;
@@ -303,7 +296,7 @@ void label_gates(GateSet* gates, char* wire, int group)
     for (int i = 0; i < num_found; ++i) {
         if (strcmp(buffer[i]->type, "OR") == 0) {
             // buffer[i]->group = group;
-            assign_group(buffer[i], group);
+            assign_group(buffer[i], group, gates);
             strcpy(buffer[i]->label, "OR");
             gates_found++;
         }
@@ -348,9 +341,13 @@ int main(int argc, char** argv)
                 group_gates++;
             }
         }
-        if ((group_gates < 5 && group != 0) || group == -1) {
-            printf("\n%d gates: %zu\n\n", group, group_gates);
-            // printf("%s\n\n", gate_str);
+         if ((group_gates < 5 && group != 0) || group == -1) {
+             printf("\n%d gates: %zu\n\n", group, group_gates);
+             for (int i = 0; i < gates.num_gates; ++i) {
+                 if (gates.gates[i].group == group) {
+                     printf("%s\n", gates.gates[i].output);
+                 }
+             }
         }
     }
 
