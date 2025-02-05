@@ -153,7 +153,8 @@ void run_gates(char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates,
     }
 }
 
-void load_input(char* filename, char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates, size_t* num_wires, size_t* num_gates) {
+void load_input(char* filename, char wires[][LABEL_LENGTH], int* wire_values, struct Gate* gates, size_t* num_wires, size_t* num_gates)
+{
     FILE* fptr;
     char* line = NULL;
     size_t len = 0;
