@@ -468,23 +468,22 @@ int main(int argc, char** argv)
     size_t num_answers = 0;
 
     label_all_gates(&gates);
-    num_dodgy = label_dodgy_gates(&gates);
-
-    swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
 
     printf("Dodgy - Orphan Swaps\n");
     printf("---------------------\n");
+    num_dodgy = label_dodgy_gates(&gates);
+    swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
     run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, false, false);
 
     printf("\nOrphan - Orphan Swaps\n");
     printf("---------------------\n");
-    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, false);
-
-    // Relabel dodgy gates now that cross bit swaps have been made.
     num_dodgy = label_dodgy_gates(&gates);
+    swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
+    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, false);
 
     printf("\nDodgy - Dodgy Swaps\n");
     printf("---------------------\n");
+    num_dodgy = label_dodgy_gates(&gates);
     swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
     run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, true);
 
