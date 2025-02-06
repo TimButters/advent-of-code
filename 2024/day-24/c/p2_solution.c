@@ -214,7 +214,6 @@ void label_gates(GateSet* gates, char* wire, int group)
     sprintf(input_bits[1], "y%02d", group);
     num_found = gate_index_by_inputs(gates, input_bits, buffer);
     for (size_t i = 0; i < num_found; ++i) {
-        // buffer[i]->group = 0;
         assign_group(buffer[i], group);
         char label[6];
         sprintf(label, "%s 1", buffer[i]->type);
@@ -319,8 +318,6 @@ void swap_gates_setup(GateSet* gates, GateSet* new_gates, Gate** orphan_gates, s
             (*num_dodgy)++;
         }
     }
-
-    // printf("Dodgy %zu, Orphan %zu\n", *num_dodgy, *num_orphans);
 }
 
 void label_all_gates(GateSet* gates)
@@ -330,6 +327,43 @@ void label_all_gates(GateSet* gates)
         sprintf(output_bit, "z%02d", i);
         label_gates(gates, output_bit, i);
     }
+}
+
+size_t label_dodgy_gates(GateSet* gates)
+{
+    for (size_t i = 0; i < gates->num_gates; ++i) {
+        gates->gates[i].dodgy = 0;
+    }
+
+    size_t num_dodgy = 0;
+    for (int group = -1; group < 45; ++group) {
+        size_t group_gates = 0;
+        size_t group_and = 0;
+        size_t group_xor = 0;
+        size_t group_or = 0;
+        for (size_t i = 0; i < gates->num_gates; ++i) {
+            if (gates->gates[i].group == group) {
+                group_gates++;
+                if (strcmp(gates->gates[i].type, "AND") == 0) {
+                    group_and++;
+                } else if (strcmp(gates->gates[i].type, "XOR") == 0) {
+                    group_xor++;
+                } else {
+                    group_or++;
+                }
+            }
+        }
+        if ((group > 0 && (group_and != 2 || group_xor != 2 || group_or != 1))) {
+            num_dodgy++;
+            for (int i = 0; i < gates->num_gates; ++i) {
+                if (gates->gates[i].group == group) {
+                    gates->gates[i].dodgy = 1;
+                }
+            }
+        }
+    }
+
+    return num_dodgy;
 }
 
 size_t calc_num_healthy_bits(const GateSet* gates)
@@ -384,7 +418,6 @@ void run_swaps(GateSet* new_gates, GateSet* gates,
             if (gate_set2[i] == gate_set1[j]) {
                 continue;
             }
-            // printf("Swapping %s with %s\n", gate_set2[i]->output, gate_set1[j]->output);
             swap_outputs(gate_set2[i], gate_set1[j]);
 
             label_all_gates(new_gates);
@@ -392,7 +425,7 @@ void run_swaps(GateSet* new_gates, GateSet* gates,
             size_t new_num_healthy_bits = calc_num_healthy_bits(new_gates);
 
             if (new_num_healthy_bits > num_healthy_bits) {
-                printf("Success! %s swapped with %s\n", gate_set2[i]->output, gate_set1[j]->output);
+                printf("%s swapped with %s\n", gate_set2[i]->output, gate_set1[j]->output);
                 strcpy(answer[*num_answers], gate_set2[i]->output);
                 strcpy(answer[*(num_answers) + 1], gate_set1[j]->output);
                 *num_answers += 2;
@@ -426,24 +459,6 @@ int main(int argc, char** argv)
     printf("Number of wires: %lu\n", num_wires);
     printf("Number of gates: %lu\n\n", gates.num_gates);
 
-    label_all_gates(&gates);
-
-    for (int group = -1; group < 45; ++group) {
-        size_t group_gates = 0;
-        for (size_t i = 0; i < gates.num_gates; ++i) {
-            if (gates.gates[i].group == group) {
-                group_gates++;
-            }
-        }
-        if ((group_gates != 5 && group > 0)) {
-            for (int i = 0; i < gates.num_gates; ++i) {
-                if (gates.gates[i].group == group) {
-                    gates.gates[i].dodgy = 1;
-                }
-            }
-        }
-    }
-
     Gate* orphan_gates[10];
     size_t num_orphans = 0;
     Gate* dodgy_gates[100];
@@ -452,126 +467,30 @@ int main(int argc, char** argv)
     char answer[10][4];
     size_t num_answers = 0;
 
-    swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
-
-    printf("P1\n");
-    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, false, false);
-    printf("answers: %zu\n", num_answers);
-
-    printf("P2\n");
-    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, false);
-    printf("answers: %zu\n", num_answers);
-
-    // Larger Groups
-    num_dodgy = 0;
-    for (int group = -1; group < 45; ++group) {
-        size_t group_gates = 0;
-        for (size_t i = 0; i < gates.num_gates; ++i) {
-            if (gates.gates[i].group == group) {
-                group_gates++;
-            }
-        }
-        if ((group_gates != 5 && group > 0)) {
-            num_dodgy++;
-            for (int i = 0; i < gates.num_gates; ++i) {
-                if (gates.gates[i].group == group) {
-                    gates.gates[i].dodgy = 1;
-                }
-            }
-        }
-    }
-
     label_all_gates(&gates);
+    num_dodgy = label_dodgy_gates(&gates);
 
-    // Last bit!
-    for (size_t i = 0; i < gates.num_gates; ++i) {
-        // Need to recalculate dodgy gates now that cross bit swaps have been
-        // made.
-        gates.gates[i].dodgy = 0;
-        // if (gates.gates[i].group == -1) {
-        //     printf("%s %s %s -> %s\n", gates.gates[i].input1, gates.gates[i].type, gates.gates[i].input2, gates.gates[i].output);
-        // }
-    }
-    num_dodgy = 0;
-    for (int group = -1; group < 45; ++group) {
-        size_t group_gates = 0;
-        size_t group_and = 0;
-        size_t group_xor = 0;
-        size_t group_or = 0;
-        for (size_t i = 0; i < gates.num_gates; ++i) {
-            if (gates.gates[i].group == group) {
-                group_gates++;
-                if (strcmp(new_gates.gates[i].type, "AND") == 0) {
-                    group_and++;
-                } else if (strcmp(new_gates.gates[i].type, "XOR") == 0) {
-                    group_xor++;
-                } else {
-                    group_or++;
-                }
-            }
-        }
-        if ((group > 0 && (group_and != 2 || group_xor != 2 || group_or != 1))) {
-            num_dodgy++;
-            for (int i = 0; i < gates.num_gates; ++i) {
-                if (gates.gates[i].group == group) {
-                    gates.gates[i].dodgy = 1;
-                }
-            }
-        }
-    }
-
-    printf("P4\n");
     swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
-    for (size_t i = 0; i < num_dodgy; ++i) {
-        for (size_t j = 0; j < num_dodgy; ++j) {
-            if (i == j) {
-                continue;
-            }
-            // printf("Swapping %s with %s\n", dodgy_gates[i]->output, dodgy_gates[j]->output);
-            swap_outputs(dodgy_gates[i], dodgy_gates[j]);
 
-            // printf("%s\n", output_bit);
+    printf("Dodgy - Orphan Swaps\n");
+    printf("---------------------\n");
+    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, false, false);
 
-            label_all_gates(&new_gates);
+    printf("\nOrphan - Orphan Swaps\n");
+    printf("---------------------\n");
+    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, false);
 
-            size_t num_gates = 0;
-            size_t num_and = 0;
-            size_t num_xor = 0;
-            size_t num_or = 0;
-            for (size_t k = 0; k < new_gates.num_gates; ++k) {
-                if (new_gates.gates[k].group == dodgy_gates[i]->group) {
-                    // printf("Output: %s %s %s -> %s\n", new_gates.gates[k].input1,
-                    //        new_gates.gates[k].label, new_gates.gates[k].input2, new_gates.gates[k].output);
-                    num_gates++;
-                    if (strcmp(new_gates.gates[k].type, "AND") == 0) {
-                        num_and++;
-                    } else if (strcmp(new_gates.gates[k].type, "XOR") == 0) {
-                        num_xor++;
-                    } else {
-                        num_or++;
-                    }
-                }
-            }
+    // Relabel dodgy gates now that cross bit swaps have been made.
+    num_dodgy = label_dodgy_gates(&gates);
 
-            if (num_gates == 5 && num_and == 2 && num_xor == 2 && num_or == 1) {
-                printf("Success! %s swapped with %s\n", dodgy_gates[i]->output, dodgy_gates[j]->output);
-                strcpy(answer[num_answers], dodgy_gates[i]->output);
-                strcpy(answer[num_answers + 1], dodgy_gates[j]->output);
-                num_answers += 2;
-                for (size_t m = 0; m < gates.num_gates; ++m) {
-                    gates.gates[m] = new_gates.gates[m];
-                    if (gates.gates[m].group == dodgy_gates[i]->group) {
-                        gates.gates[m].dodgy = 0;
-                    }
-                }
-            }
-            swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
-        }
-    }
+    printf("\nDodgy - Dodgy Swaps\n");
+    printf("---------------------\n");
+    swap_gates_setup(&gates, &new_gates, orphan_gates, &num_orphans, dodgy_gates, &num_dodgy);
+    run_swaps(&new_gates, &gates, orphan_gates, num_orphans, dodgy_gates, num_dodgy, answer, &num_answers, true, true);
 
     qsort(answer, 8, 4, compare_strings);
 
-    printf("Part 2: ");
+    printf("\nPart 2: ");
     for (size_t i = 0; i < num_answers; ++i) {
         if (i > 0) {
             printf(",");
