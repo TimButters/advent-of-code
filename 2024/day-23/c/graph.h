@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#define MAX_NODES 100
+#define MAX_NODES 10000
 #define MAX_LINKS 100
 #define MAX_NAME_LENGTH 10
 

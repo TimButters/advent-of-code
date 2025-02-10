@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+int strcompare(const void* str1, const void* str2)
+{
+    char* s1 = (char*)str1;
+    char* s2 = (char*)str2;
+    return strcmp(s1, s2);
+}
+
 Graph load_data(char* filename)
 {
     FILE* fptr = fopen(filename, "r");
@@ -30,12 +37,11 @@ Graph load_data(char* filename)
     return g;
 }
 
-int link_overlap(Node** links1, size_t num_links1, Node** links2, size_t num_links2, char overlap_buffer[100][10])
+int link_overlap(Node** links1, size_t num_links1, Node** links2, size_t num_links2, char overlap_buffer[][20])
 {
     int num_overlap = 0;
     for (size_t i = 0; i < num_links1; ++i) {
         for (size_t j = 0; j < num_links2; ++j) {
-            printf("%s\t%s\t%d\n", links1[i]->name, links2[j]->name, strcmp(links1[i]->name, links2[j]->name));
             if (strcmp(links1[i]->name, links2[j]->name) == 0) {
                 strcpy(overlap_buffer[num_overlap], links1[i]->name);
                 num_overlap++;
@@ -45,28 +51,47 @@ int link_overlap(Node** links1, size_t num_links1, Node** links2, size_t num_lin
     return num_overlap;
 }
 
-void find_groups(Graph* g)
+int find_groups(Graph* g)
 {
-    char results[100][20];
+    // char results[100][20];
+    char (*results)[20] = malloc(sizeof(char[10000][20]));
     size_t num_results = 0;
-    char overlap_buffer[100][10];
+    // char overlap_buffer[100][20];
+    char (*overlap_buffer)[20] = malloc(sizeof(char[10000][20]));
+    char res[3][20];
     for (size_t i = 0; i < g->num_nodes; ++i) {
         for (size_t j = 0; j < g->nodes[i].num_links; ++j) {
             int num_overlap = link_overlap(g->nodes[i].links, g->nodes[i].num_links,
-                    g->nodes[i].links[j]->links, g->nodes[i].links[j]->num_links, overlap_buffer);
-            if (num_overlap > 1) {
+                g->nodes[i].links[j]->links, g->nodes[i].links[j]->num_links, overlap_buffer);
+            if (num_overlap > 0) {
                 for (size_t k = 0; k < num_overlap; ++k) {
-                    snprintf(results[num_results], 20, "%s-%s-%s\n",
-                            g->nodes[i].name, g->nodes[i].links[j]->name, overlap_buffer[k]);
-                    num_results++;
+                    strcpy(res[0], g->nodes[i].name);
+                    strcpy(res[1], g->nodes[i].links[j]->name);
+                    strcpy(res[2], overlap_buffer[k]);
+                    if (res[0][0] == 't' || res[1][0] == 't' || res[2][0] == 't') {
+                        qsort(res, 3, sizeof res[0], strcompare);
+                        snprintf(results[num_results], 20, "%s-%s-%s", res[0], res[1], res[2]);
+                        num_results++;
+                    }
                 }
             }
         }
     }
 
+    qsort(results, num_results, sizeof results[0], strcompare);
+
+    int num_groups = 0;
+    char last_group[20];
     for (size_t i = 0; i < num_results; ++i) {
-        printf("%s\n", results[i]);
+        if (strcmp(results[i], last_group) != 0) {
+            num_groups++;
+        }
+        strcpy(last_group, results[i]);
     }
+    free(results);
+    free(overlap_buffer);
+
+    return num_groups;
 }
 
 int main(int argc, char** argv)
@@ -77,7 +102,11 @@ int main(int argc, char** argv)
     }
 
     Graph g = load_data(argv[1]);
-    find_groups(&g);
+    int num_groups = find_groups(&g);
+
+    printf("Part 1: %d\n", num_groups);
+    // kh-qp-ub
+    // aq-cg-yn
 
     return 0;
 }
