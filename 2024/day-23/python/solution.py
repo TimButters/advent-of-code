@@ -48,23 +48,45 @@ def find_sets(g: Graph):
     return list(set(sets))
 
 
-def find_largest_set(g: Graph):
+def find_sets_nodes(g: Graph):
     sets = []
     for name, node in g.nodes.items():
         links = set(node.links)
-        overlap = set(node.links + [node])
-        for link in links:
-            overlap = overlap.intersection(link.links + [link])
-            #print([o.name for o in overlap])
-        sets.append(list(overlap))
-    return sets
+        for subnode in node.links:
+            overlap = links.intersection(subnode.links)
+            if len(overlap) >= 1:
+                for overlap_name in overlap:
+                    s = (node, subnode, overlap_name)
+                    sets.append(tuple(s))
+    return list(set(sets))
+
+
+def find_largest_set(g: Graph):
+    group_ranks = dict()
+    threes = find_sets_nodes(g)
+    for nodes in threes:
+        for node in nodes:
+            print(sorted([link.name for link in node.links]))
+
+        rank = set(nodes[0].links).intersection(nodes[1].links).intersection(nodes[2].links)
+        print([r.name for r in rank])
+        rank = len(rank)
+
+        if rank > 3:
+            if rank in group_ranks:
+                group_ranks[rank].append(nodes)
+            else:
+                group_ranks[rank] = [nodes]
+        break
+    return group_ranks
 
 
 if __name__ == "__main__":
-    filename = "test_input.txt"
+    filename = "input.txt"
     g = load_input(filename)
     nodes = find_sets(g)
     print(f"Part 1: {len(nodes)}")
 
-    largest = find_largest_set(g)
-    print(f"Part 2: {[len(l) for l in largest]}")
+    group_ranks = find_largest_set(g)
+    for k, v in group_ranks.items():
+        print(k, len(v))

@@ -53,10 +53,8 @@ int link_overlap(Node** links1, size_t num_links1, Node** links2, size_t num_lin
 
 int find_groups(Graph* g)
 {
-    // char results[100][20];
     char (*results)[20] = malloc(sizeof(char[10000][20]));
     size_t num_results = 0;
-    // char overlap_buffer[100][20];
     char (*overlap_buffer)[20] = malloc(sizeof(char[10000][20]));
     char res[3][20];
     for (size_t i = 0; i < g->num_nodes; ++i) {
@@ -105,8 +103,6 @@ int main(int argc, char** argv)
     int num_groups = find_groups(&g);
 
     printf("Part 1: %d\n", num_groups);
-    // kh-qp-ub
-    // aq-cg-yn
 
     return 0;
 }
