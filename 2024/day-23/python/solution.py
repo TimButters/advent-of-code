@@ -62,23 +62,30 @@ def find_sets_nodes(g: Graph):
 
 
 def find_largest_set(g: Graph):
-    group_ranks = dict()
-    threes = find_sets_nodes(g)
-    for nodes in threes:
-        for node in nodes:
-            print(sorted([link.name for link in node.links]))
+    groups = find_sets_nodes(g)
 
-        rank = set(nodes[0].links).intersection(nodes[1].links).intersection(nodes[2].links)
-        print([r.name for r in rank])
-        rank = len(rank)
-
-        if rank > 3:
-            if rank in group_ranks:
-                group_ranks[rank].append(nodes)
-            else:
-                group_ranks[rank] = [nodes]
-        break
-    return group_ranks
+    results = []
+    node_added = True
+    while node_added:
+        node_added = False
+        wipe_group = True if len([g for g in groups if g is not None]) > 1 else False
+        for i, group in enumerate(groups):
+            if group is not None:
+                # print([g.name for g in group])
+                group_names = set([g.name for g in group])
+                min_node = min(group, key=lambda k: len(k.links))
+                candidates = set([g for g in min_node.links if g.name not in group_names])
+                for candidate in candidates:
+                    candidate_links = set([c.name for c in candidate.links])
+                    if len(candidate_links.intersection(group_names)) == len(group_names):
+                        groups[i] = tuple(list(group) + [candidate])
+                        node_added = True
+                        wipe_group = False
+                if wipe_group:
+                    results.append(sorted([g.name for g in group]))
+                    groups[i] = None
+    return max(results, key=lambda k: len(k))
+            
 
 
 if __name__ == "__main__":
@@ -86,7 +93,6 @@ if __name__ == "__main__":
     g = load_input(filename)
     nodes = find_sets(g)
     print(f"Part 1: {len(nodes)}")
-
-    group_ranks = find_largest_set(g)
-    for k, v in group_ranks.items():
-        print(k, len(v))
+    
+    group = find_largest_set(g)
+    print("Part 2:", ",".join(sorted(group)))
