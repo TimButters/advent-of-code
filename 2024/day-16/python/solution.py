@@ -38,11 +38,11 @@ class Maze:
             x, y = option
             if (
                 x == curr_x
-                and (direction == Direction.East)
-                or direction == Direction.West
+                and (direction == Direction.North)
+                or direction == Direction.South
             ) or (
                 y == curr_y
-                and (direction == Direction.North or direction == Direction.South)
+                and (direction == Direction.East or direction == Direction.West)
             ):
                 score = 1
             else:
@@ -51,21 +51,46 @@ class Maze:
             options_scores.append((option, score))
         return options_scores
 
-    def _find_next_cells(self, position: Point, direction: Direction):
+    def _find_next_cells(
+        self, position: Point, direction: Direction, path: list[Point]
+    ):
         x, y = position
         candidates = {(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)}
-        options = candidates.intersection(self.maze) ^ self.path
-        return self._score_options(options, direction)
+        options = candidates.intersection(self.maze) - set([p[0] for p in path])
+        return self._score_options(position, direction, options)
+
+    @staticmethod
+    def _update_direction(position: Point, next_step: Point):
+        x, y = position
+        new_x, new_y = next_step
+        if new_x > x:
+            return Direction.East
+        elif new_x < x:
+            return Direction.West
+        elif new_y > y:
+            return Direction.North
+        else:
+            return Direction.South
 
     def walk(self):
-        path = []
         position = self.start
         direction = Direction.East
-        options = self._find_next_cells(position, direction)
+        path = [(self.start, 0)]
+        for _ in range(10):
+            options = self._find_next_cells(position, direction, path)
+            next_step = min(options, key=lambda x: x[1]) if options else None
+
+            if next_step is None or next_step[0] == self.end:
+                return path
+            else:
+                direction = self._update_direction(position, next_step[0])
+                path.append(next_step)
+                position = next_step[0]
 
 
 if __name__ == "__main__":
     filename = "./test_input.txt"
     maze = Maze(filename)
-    print(maze.start, maze.end)
-    print(maze.maze)
+    print(maze.start, maze.end, "\n")
+    path = maze.walk()
+    print(path)
