@@ -43,8 +43,8 @@ class Maze:
             x, y = option
             if (
                 x == curr_x
-                and (direction == Direction.North)
-                or direction == Direction.South
+                and (direction == Direction.North
+                or direction == Direction.South)
             ) or (
                 y == curr_y
                 and (direction == Direction.East or direction == Direction.West)
@@ -86,6 +86,7 @@ class Maze:
         decision_point = False
         step = 0
         while True:
+            print(len(paths))
             if not decision_point:
                 options = self._find_next_cells(position, direction, path)
                 next_step = min(options, key=lambda x: x[1]) if options else None
@@ -94,30 +95,35 @@ class Maze:
                 if decision_set:
                     decisions.append((position, direction, step, decision_set))
             decision_point = False
+            
+            if next_step is None or next_step[0] == self.end:
+                if next_step is not None:
+                    path.append(next_step)
+                    paths.append(path)
 
-            if next_step is None:
-                position, direction, step, decision_set = decisions[-1]
-                next_step = decision_set.pop()
-                if not decision_set:
-                    decisions.pop()
-                decision_point = True
-                paths.append(path)
-                path = path[0 : step + 1]
-            elif next_step[0] == self.end:
-                path.append(next_step)
-                return path
+                if decisions:
+                    position, direction, step, decision_set = decisions[-1]
+                    next_step = decision_set.pop()
+                    if not decision_set:
+                        decisions.pop()
+                    decision_point = True
+                    path = path[0 : step + 1]
+                else:
+                    break
             else:
                 direction = self._update_direction(position, next_step[0])
                 path.append(next_step)
                 position = next_step[0]
                 step += 1
 
+        return paths
+
+
 
 if __name__ == "__main__":
     filename = "./test_input.txt"
     maze = Maze(filename)
     print(maze.start, maze.end, "\n")
-    path = maze.walk()
-    print(path)
-    print(len(path))
-    print(Maze.score_path(path))
+    
+    paths = maze.walk()
+    print(min([Maze.score_path(path) for path in paths]))
