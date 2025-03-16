@@ -28,7 +28,12 @@ class Maze:
                 if c == "S":
                     self.start = (x, y)
                 if c == "E":
+                    self.maze.append((x, y))
                     self.end = (x, y)
+
+    @staticmethod
+    def score_path(path: list[tuple[Point, int]]):
+        return sum([p[1] for p in path])
 
     @staticmethod
     def _score_options(position, direction, options):
@@ -46,7 +51,7 @@ class Maze:
             ):
                 score = 1
             else:
-                score = 1000
+                score = 1001
 
             options_scores.append((option, score))
         return options_scores
@@ -76,16 +81,36 @@ class Maze:
         position = self.start
         direction = Direction.East
         path = [(self.start, 0)]
-        for _ in range(10):
-            options = self._find_next_cells(position, direction, path)
-            next_step = min(options, key=lambda x: x[1]) if options else None
+        paths = []
+        decisions = []
+        decision_point = False
+        step = 0
+        while True:
+            if not decision_point:
+                options = self._find_next_cells(position, direction, path)
+                next_step = min(options, key=lambda x: x[1]) if options else None
 
-            if next_step is None or next_step[0] == self.end:
+                decision_set = list(set(options) - {next_step})
+                if decision_set:
+                    decisions.append((position, direction, step, decision_set))
+            decision_point = False
+
+            if next_step is None:
+                position, direction, step, decision_set = decisions[-1]
+                next_step = decision_set.pop()
+                if not decision_set:
+                    decisions.pop()
+                decision_point = True
+                paths.append(path)
+                path = path[0 : step + 1]
+            elif next_step[0] == self.end:
+                path.append(next_step)
                 return path
             else:
                 direction = self._update_direction(position, next_step[0])
                 path.append(next_step)
                 position = next_step[0]
+                step += 1
 
 
 if __name__ == "__main__":
@@ -94,3 +119,5 @@ if __name__ == "__main__":
     print(maze.start, maze.end, "\n")
     path = maze.walk()
     print(path)
+    print(len(path))
+    print(Maze.score_path(path))
