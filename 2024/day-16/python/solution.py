@@ -32,10 +32,6 @@ class Maze:
                     self.end = (x, y)
 
     @staticmethod
-    def score_path(path: list[tuple[Point, int]]):
-        return sum([p[1] for p in path])
-
-    @staticmethod
     def _score_options(position, direction, options):
         options_scores = []
         curr_x, curr_y = position
@@ -43,8 +39,7 @@ class Maze:
             x, y = option
             if (
                 x == curr_x
-                and (direction == Direction.North
-                or direction == Direction.South)
+                and (direction == Direction.North or direction == Direction.South)
             ) or (
                 y == curr_y
                 and (direction == Direction.East or direction == Direction.West)
@@ -55,14 +50,6 @@ class Maze:
 
             options_scores.append((option, score))
         return options_scores
-
-    def _find_next_cells(
-        self, position: Point, direction: Direction, path: list[Point]
-    ):
-        x, y = position
-        candidates = {(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)}
-        options = candidates.intersection(self.maze) - set([p[0] for p in path])
-        return self._score_options(position, direction, options)
 
     @staticmethod
     def _update_direction(position: Point, next_step: Point):
@@ -77,53 +64,45 @@ class Maze:
         else:
             return Direction.South
 
-    def walk(self):
-        position = self.start
-        direction = Direction.East
-        path = [(self.start, 0)]
-        paths = []
-        decisions = []
-        decision_point = False
-        step = 0
-        while True:
-            print(len(paths))
-            if not decision_point:
-                options = self._find_next_cells(position, direction, path)
-                next_step = min(options, key=lambda x: x[1]) if options else None
+    def _neighbours(
+        self, position: Point, visited: list[Point], direction: Direction | None
+    ):
+        x, y = position
+        candidates = {(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)}
+        options = candidates.intersection(self.maze) - set(visited)
+        return Maze._score_options(position, direction, options)
 
-                decision_set = list(set(options) - {next_step})
-                if decision_set:
-                    decisions.append((position, direction, step, decision_set))
-            decision_point = False
-            
-            if next_step is None or next_step[0] == self.end:
-                if next_step is not None:
-                    path.append(next_step)
-                    paths.append(path)
-
-                if decisions:
-                    position, direction, step, decision_set = decisions[-1]
-                    next_step = decision_set.pop()
-                    if not decision_set:
-                        decisions.pop()
-                    decision_point = True
-                    path = path[0 : step + 1]
-                else:
-                    break
+    def dijkstra(self):
+        node_scores = {p: (999999, (-1, -1), -1) for p in self.maze}
+        unvisited = self.maze.copy() + [self.start]
+        visited = []
+        node_scores[self.start] = (0, (-1, -1), Direction.East)
+        while unvisited:
+            if not visited:
+                current_node = self.start
             else:
-                direction = self._update_direction(position, next_step[0])
-                path.append(next_step)
-                position = next_step[0]
-                step += 1
+                current_node = min(
+                    [(node_scores[p][0], p) for p in unvisited], key=lambda x: x[0]
+                )[1]
 
-        return paths
-
+            score, _, direction = node_scores[current_node]
+            for n_pos, n_score in self._neighbours(current_node, visited, direction):
+                new_score = score + n_score
+                if new_score < node_scores[n_pos][0]:
+                    node_scores[n_pos] = (
+                        new_score,
+                        current_node,
+                        Maze._update_direction(current_node, n_pos),
+                    )
+            visited.append(current_node)
+            unvisited.remove(current_node)
+        return node_scores
 
 
 if __name__ == "__main__":
-    filename = "./test_input.txt"
+    filename = "./input.txt"
     maze = Maze(filename)
     print(maze.start, maze.end, "\n")
-    
-    paths = maze.walk()
-    print(min([Maze.score_path(path) for path in paths]))
+
+    paths = maze.dijkstra()
+    print(f"Part 1: {paths[maze.end][0]}")
