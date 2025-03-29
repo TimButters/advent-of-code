@@ -1,12 +1,13 @@
 from enum import Enum
+from collections import deque
 
 Point = tuple[int, int]
 
 
 class Direction(Enum):
     North = 1
-    South = 2
-    East = 3
+    East = 2
+    South = 3
     West = 4
 
 
@@ -26,6 +27,7 @@ class Maze:
                 if c == ".":
                     self.maze.append((x, y))
                 if c == "S":
+                    self.maze.append((x, y))
                     self.start = (x, y)
                 if c == "E":
                     self.maze.append((x, y))
@@ -72,11 +74,11 @@ class Maze:
         options = candidates.intersection(self.maze) - set(visited)
         return Maze._score_options(position, direction, options)
 
-    def dijkstra(self):
+    def dijkstra(self, start_direction: Direction = Direction.East):
         node_scores = {p: (999999, (-1, -1), -1) for p in self.maze}
         unvisited = self.maze.copy() + [self.start]
         visited = []
-        node_scores[self.start] = (0, (-1, -1), Direction.East)
+        node_scores[self.start] = (0, (-1, -1), start_direction)
         while unvisited:
             if not visited:
                 current_node = self.start
@@ -99,10 +101,40 @@ class Maze:
         return node_scores
 
 
+def check_score(coord: Point, optimal_score: int, scores, rev_scores1, rev_scores2):
+    total1 = scores[coord][0] + rev_scores1[coord][0]
+    if abs(scores[coord][2].value - rev_scores1[coord][2].value) != 2:
+        total1 += 1000
+
+    total2 = scores[coord][0] + rev_scores2[coord][0]
+    if abs(scores[coord][2].value - rev_scores2[coord][2].value) != 2:
+        total2 += 1000
+
+    if total1 == optimal_score or total2 == optimal_score:
+        return True
+
+    return False
+
+
 if __name__ == "__main__":
     filename = "./input.txt"
     maze = Maze(filename)
     print(maze.start, maze.end, "\n")
 
-    paths = maze.dijkstra()
-    print(f"Part 1: {paths[maze.end][0]}")
+    scores = maze.dijkstra()
+    optimal_score = scores[maze.end][0]
+    print(f"Part 1: {optimal_score}")
+
+    start = maze.start
+    end = maze.end
+    maze.start = end
+    maze.end = start
+    rev_scores1 = maze.dijkstra(Direction.South)
+    rev_scores2 = maze.dijkstra(Direction.West)
+
+    spots = [
+        coord
+        for coord in maze.maze
+        if check_score(coord, optimal_score, scores, rev_scores1, rev_scores2)
+    ]
+    print(f"Part 2: {len(spots)}")
