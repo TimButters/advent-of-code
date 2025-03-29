@@ -38,6 +38,23 @@ def dijkstra(maze: list[Point]) -> dict[Point, int]:
     return scores
 
 
+def first_cutoff(byte_positions: list[Point], dim: int):
+    top = len(byte_positions)
+    bottom = 1024
+    idx = (top + bottom) // 2
+
+    while top - bottom > 1:
+        mem_space = generate_memory_space(dim)
+        maze = set(mem_space) - set(byte_positions[0:idx])
+        scores = dijkstra(maze)
+        if scores[(70, 70)] < 999999:
+            bottom = idx
+        else:
+            top = idx
+        idx = (top + bottom) // 2
+    return byte_positions[bottom]
+
+
 if __name__ == "__main__":
     filename = "input.txt"
     byte_positions = load_input(filename)
@@ -45,3 +62,6 @@ if __name__ == "__main__":
     maze = set(mem_space) - set(byte_positions[0:1024])
     scores = dijkstra(maze)
     print(f"Part 1: {scores[(70, 70)]}")
+
+    blocker = first_cutoff(byte_positions, 71)
+    print(f"Part 2: {','.join(map(str, blocker))}")
