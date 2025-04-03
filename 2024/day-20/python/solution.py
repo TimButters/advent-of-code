@@ -118,6 +118,9 @@ if __name__ == "__main__":
         else:
             saves[diff] = 1
 
-    c = [(obstacle, score) for obstacle, score in cheats.items() if score <= baseline - 100]
+    c = [
+        (obstacle, score)
+        for obstacle, score in cheats.items()
+        if score <= baseline - 100
+    ]
     print(f"Part 1: {len(c)}")
-
