@@ -154,16 +154,21 @@ def part2(maze: Maze):
             saves[diff] += 1
         else:
             saves[diff] = 1
-    return cheats, saves
+
+    c = [
+        (obstacle, score)
+        for obstacle, score in cheats.items()
+        if score <= baseline - 100
+    ]
+    return c
 
 
 if __name__ == "__main__":
-    filename = "test_input.txt"
+    filename = "input.txt"
     maze = Maze(filename)
 
     cheats = part1(maze)
     print(f"Part 1: {len(cheats)}")
 
-    cheats2, saves = part2(maze)
-
-    print(saves)
+    cheats2 = part2(maze)
+    print(f"Part 2: {len(cheats2)}")
