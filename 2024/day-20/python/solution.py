@@ -86,10 +86,14 @@ class Maze:
         surrounding = {(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)}
         return surrounding.intersection(self.maze)
 
+    @staticmethod
+    def mh_dist(p1: Point, p2: Point) -> int:
+        x1, y1 = p1
+        x2, y2 = p2
+        return abs(x1 - x2) + abs(y1 - y2)
 
-if __name__ == "__main__":
-    filename = "input.txt"
-    maze = Maze(filename)
+
+def part1(maze: Maze) -> list[tuple[Point, int]]:
     scores_f = maze.dijkstra()
     scores_b = maze.dijkstra(backwards=True)
 
@@ -123,4 +127,43 @@ if __name__ == "__main__":
         for obstacle, score in cheats.items()
         if score <= baseline - 100
     ]
-    print(f"Part 1: {len(c)}")
+    return c
+
+
+def part2(maze: Maze):
+    assert maze.start is not None
+    assert maze.end is not None
+    scores_f = maze.dijkstra()
+    scores_b = maze.dijkstra(backwards=True)
+    baseline = scores_f[maze.end]
+
+    cheats = dict()
+    for fp, fs in scores_f.items():
+        for bp, bs in scores_b.items():
+            distance = maze.mh_dist(fp, bp)
+            if distance > 20:  # SHOULD THIS BE 19?
+                continue
+            new_score = fs + bs + distance
+            if new_score < baseline:
+                cheats[(fp, bp)] = new_score
+
+    saves = dict()
+    for _, v in cheats.items():
+        diff = baseline - v
+        if diff in saves:
+            saves[diff] += 1
+        else:
+            saves[diff] = 1
+    return cheats, saves
+
+
+if __name__ == "__main__":
+    filename = "test_input.txt"
+    maze = Maze(filename)
+
+    cheats = part1(maze)
+    print(f"Part 1: {len(cheats)}")
+
+    cheats2, saves = part2(maze)
+
+    print(saves)
