@@ -42,6 +42,8 @@ def load_input(filename: str, max_x: int, max_y: int):
                 .replace("v", "")
                 .split(" ")
             ]
+            assert len(pos) == 2
+            assert len(vel) == 2
             robots.append(Robot(pos, vel, max_x, max_y))
     return robots
 
@@ -77,6 +79,29 @@ def part1(robots: list[Robot], max_x: int, max_y: int) -> int:
     return prod(counts.values())
 
 
+def part2(robots: list[Robot], X: int, Y: int):
+    for i in range(10404):
+        board = []
+        state = set()
+        for robot in robots:
+            robot.move(1)
+            board.append(robot.pos)
+            state.add(robot.pos)
+        if len(state) == len(robots):
+            print(i + 1)
+            print_board(board, X, Y)
+            print()
+
+
+def print_board(board: list[Point], X: int, Y: int):
+    for y in range(Y):
+        row = ""
+        for x in range(X):
+            row += "#" if (x, y) in board else "."
+        print(row)
+    print()
+
+
 if __name__ == "__main__":
     filename = "input.txt"
     X = 101
@@ -84,3 +109,6 @@ if __name__ == "__main__":
     robots = load_input(filename, X, Y)
     safety_factor = part1(robots, X, Y)
     print(f"Part 1: {safety_factor}")
+
+    robots = load_input(filename, X, Y)
+    part2(robots, X, Y)
