@@ -117,23 +117,28 @@ fn arm_moves_arm(arm: &mut Arm, target: &char) -> Vec<char> {
     return sequence;
 }
 
-fn process_movement(arm: &mut Arm, target: &Vec<char>) {
+fn process_movement(arm: &mut Arm, target: &Vec<char>) -> Vec<char> {
     let mut seqs: Vec<Vec<char>> = vec![];
     for c in target {
         let seq: Vec<char> = arm_moves_arm(arm, &c);
         seqs.push(seq);
     }
-    let s: String = seqs.into_iter().flatten().collect::<Vec<char>>().iter().collect();
-    println!("{s}");
+    let sequence = seqs.into_iter().flatten().collect::<Vec<char>>();
+    let s: String = sequence.iter().collect();
+    println!("{}: {s}", sequence.len());
+    return sequence;
 }
 
 fn main() {
-    let target = load_program("../test_input.txt");
+    let target: Vec<char> = load_program("../test_input.txt");
 
     let mut numpad = Arm::new_numpad();
-    let dirpad1 = Arm::new_dirpad();
+    let mut dirpad1 = Arm::new_dirpad();
+    let mut dirpad2 = Arm::new_dirpad();
 
 
-    process_movement(&mut numpad, &target);
+    let seq1: Vec<char> = process_movement(&mut numpad, &target);
+    let seq2: Vec<char> = process_movement(&mut dirpad1, &seq1);
+    let seq3: Vec<char> = process_movement(&mut dirpad2, &seq2);
 
 }
