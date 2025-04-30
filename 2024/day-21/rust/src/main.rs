@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct Point {
     x: i64,
     y: i64,
@@ -16,7 +16,15 @@ struct Arm {
 }
 
 impl Arm {
-    fn new() -> Arm {
+    fn new(coord_map: HashMap<char, Point>) -> Arm {
+        let start_pos = coord_map[&'A'].clone();
+        return Arm {
+            pos: start_pos,
+            coords: coord_map,
+        };
+    }
+
+    fn new_numpad() -> Arm {
         let coord_map: HashMap<char, Point> = HashMap::from([
             ('A', Point { x: 2, y: 3 }),
             ('0', Point { x: 1, y: 3 }),
@@ -30,11 +38,18 @@ impl Arm {
             ('8', Point { x: 1, y: 0 }),
             ('9', Point { x: 2, y: 0 }),
         ]);
-        let start_pos = coord_map[&'A'].clone();
-        return Arm {
-            pos: start_pos,
-            coords: coord_map,
-        };
+        return Arm::new(coord_map);
+    }
+
+    fn new_dirpad() -> Arm {
+        let coord_map: HashMap<char, Point> = HashMap::from([
+            ('A', Point { x: 2, y: 0 }),
+            ('^', Point { x: 1, y: 0 }),
+            ('<', Point { x: 0, y: 1 }),
+            ('v', Point { x: 1, y: 1 }),
+            ('>', Point { x: 2, y: 1 }),
+        ]);
+        return Arm::new(coord_map);
     }
 
     fn move_arm(&mut self, target: char) -> u64 {
@@ -67,13 +82,58 @@ fn load_program(filename: &str) -> Vec<char> {
     return code.trim().chars().collect();
 }
 
+fn arm_moves_arm(arm: &mut Arm, target: &char) -> Vec<char> {
+    let target_coord = arm.coords[&target];
+    let x_change = target_coord.x - arm.pos.x;
+    let y_change = target_coord.y - arm.pos.y;
+    arm.move_arm(*target);
+
+    let x_button: char;
+    if x_change > 0 {
+        x_button = '>';
+    } else if x_change < 0 {
+        x_button = '<';
+    } else {
+        x_button = 'X';
+    }
+
+    let y_button: char;
+    if y_change > 0 {
+        y_button = 'v';
+    } else if y_change < 0 {
+        y_button = '^';
+    } else {
+        y_button = 'X';
+    }
+
+    let mut sequence: Vec<char> = vec![];
+    for _ in 0..x_change.abs() {
+        sequence.push(x_button);
+    }
+    for _ in 0..y_change.abs() {
+        sequence.push(y_button);
+    }
+    sequence.push('A');
+    return sequence;
+}
+
+fn process_movement(arm: &mut Arm, target: &Vec<char>) {
+    let mut seqs: Vec<Vec<char>> = vec![];
+    for c in target {
+        let seq: Vec<char> = arm_moves_arm(arm, &c);
+        seqs.push(seq);
+    }
+    let s: String = seqs.into_iter().flatten().collect::<Vec<char>>().iter().collect();
+    println!("{s}");
+}
+
 fn main() {
     let target = load_program("../test_input.txt");
 
-    let mut arm = Arm::new();
+    let mut numpad = Arm::new_numpad();
+    let dirpad1 = Arm::new_dirpad();
 
-    for c in target {
-        let combinations = arm.move_arm(c);
-        println!("{c}\t{combinations}");
-    }
+
+    process_movement(&mut numpad, &target);
+
 }
