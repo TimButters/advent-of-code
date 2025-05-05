@@ -115,7 +115,10 @@ fn arm_moves_arm(arm: &mut Arm, target: &char) -> Vec<char> {
     let button_2: char;
     let change_1: i64;
     let change_2: i64;
-    let inter_coord = Point {x: current_pos.x + x_change, y: current_pos.y };
+    let inter_coord = Point {
+        x: current_pos.x + x_change,
+        y: current_pos.y,
+    };
     if inter_coord == error_coord {
         button_1 = y_button;
         change_1 = y_change.abs();
