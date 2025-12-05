@@ -44,6 +44,5 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     input = parse_input(filename)
 
-
     print("Part 1:", part1(input))
     print("Part 2:", part2(input))
