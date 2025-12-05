@@ -1,4 +1,4 @@
-use factorial::Factorial;
+//use factorial::Factorial;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
@@ -54,21 +54,18 @@ impl Arm {
         return Arm::new(coord_map);
     }
 
-    fn move_arm(&mut self, target: char) -> u64 {
+    fn move_arm(&mut self, target: char) {
         let destination: &Point = &self.coords[&target];
-        let x_diff: u64 = (self.pos.x - destination.x)
-            .abs()
-            .try_into()
-            .expect("Could not convert to unsigned int.");
-        let y_diff: u64 = (self.pos.y - destination.y)
-            .abs()
-            .try_into()
-            .expect("Could not convert to unsigned int.");
-        let combinations: u64 =
-            (x_diff + y_diff).factorial() / (x_diff.factorial() * y_diff.factorial());
+        //let x_diff: u64 = (self.pos.x - destination.x)
+        //    .abs()
+        //    .try_into()
+        //    .expect("Could not convert to unsigned int.");
+        //let y_diff: u64 = (self.pos.y - destination.y)
+        //    .abs()
+        //    .try_into()
+        //    .expect("Could not convert to unsigned int.");
 
         self.pos = destination.clone();
-        return combinations;
     }
 }
 
@@ -150,7 +147,7 @@ fn process_movement(arm: &mut Arm, target: &Vec<char>) -> Vec<char> {
     }
     let sequence = seqs.into_iter().flatten().collect::<Vec<char>>();
     let s: String = sequence.iter().collect();
-    //println!("{}: {s}", sequence.len());
+    println!("{}: {s}", sequence.len());
     return sequence;
 }
 
