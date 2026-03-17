@@ -16,16 +16,15 @@ func loadData(from path: String) -> [Point] {
         let content = try String(contentsOf: fileURL, encoding: .utf8)
         let lines = content.split(separator: "\n")
 
-        var points: [Point] = []
-        for line in lines {
+        return lines.compactMap { line in
             let parts = line.split(separator: ",")
-            if let xStr = parts.first, let yStr = parts.last, let x = Int(xStr), let y = Int(yStr) {
-                let p = Point(x: x, y: y)
-                points.append(p)
-            }
+            guard let xStr = parts.first,
+                let yStr = parts.last,
+                let x = Int(xStr),
+                let y = Int(yStr)
+            else { return nil }
+            return Point(x: x, y: y)
         }
-
-        return points
 
     } catch {
         print("ERROR: \(error.localizedDescription)")
@@ -35,11 +34,11 @@ func loadData(from path: String) -> [Point] {
 
 func findLargestRectangle(tileLocations points: [Point]) -> Int {
     var largestArea = 0
-    for c1 in points {
-        for c2 in points {
-            if c1 == c2 {
-                continue
-            }
+    for i in 0..<points.count {
+        for j in (i + 1)..<points.count {
+
+            let c1 = points[i]
+            let c2 = points[j]
 
             let area = (abs(c1.x - c2.x) + 1) * (abs(c1.y - c2.y) + 1)
             if area > largestArea {
@@ -50,7 +49,6 @@ func findLargestRectangle(tileLocations points: [Point]) -> Int {
     return largestArea
 }
 
-let points = loadData(from: "./test_input.txt")
+let points = loadData(from: "./input.txt")
 let largestArea = findLargestRectangle(tileLocations: points)
 print(largestArea)
-
