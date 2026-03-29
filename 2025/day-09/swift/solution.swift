@@ -102,6 +102,20 @@ func isPerimeterContained(innerPerimeter: Set<Point>, outerPerimeter: Set<Point>
             return false
         }
     }
+
+    let minX = innerPerimeter.map { $0.x }.min()!
+    let maxX = innerPerimeter.map { $0.x }.max()!
+    let minY = innerPerimeter.map { $0.y }.min()!
+    let maxY = innerPerimeter.map { $0.y }.max()!
+
+    for y in (minY + 1)..<maxY {
+        if let rowPoints = perimeterLookup[y] {
+            if rowPoints.contains(where: { $0.x > minX && $0.x < maxX }) {
+                return false
+            }
+        }
+    }
+
     return true
 }
 
@@ -120,11 +134,12 @@ func findLargestRectangleAllInner(tileLocations points: [Point]) -> Int {
             if area > largestArea {
                 let otherCorner1 = Point(x: c1.x, y: c2.y)
                 let otherCorner2 = Point(x: c2.x, y: c1.y)
+                let innerPerimeter = Set([c1, otherCorner1, c2, otherCorner2])
 
                 // Is the perimeter of this rectangle contained by the shape perimiter?
-                let innerPerimeter = buildPerimeter(tileLocations: [
-                    c1, otherCorner1, c2, otherCorner2,
-                ])
+                //let innerPerimeter = buildPerimeter(tileLocations: [
+                //    c1, otherCorner1, c2, otherCorner2,
+                //])
                 if isPerimeterContained(
                     innerPerimeter: innerPerimeter, outerPerimeter: perimeter,
                     perimeterLookup: perimeterByY)
