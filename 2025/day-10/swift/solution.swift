@@ -1,13 +1,31 @@
 import Foundation
 
 struct Machine: Hashable, CustomStringConvertible {
-    var targetState: [Int]
-    var state: [Int]
-    var buttons: [[Int]]
+    var targetState: UInt64
+    var state: UInt64 = 0
+    var stateWidth: Int
+    var buttons: [UInt64]
     var joltage: [Int]
 
     var description: String {
-        return "(\((state)):   [\((targetState))] \t \(buttons) \t {\(joltage)})"
+        // Helper to format bits with leading zeros
+        func formatBits(_ value: UInt64) -> String {
+            let binary = String(value, radix: 2)
+            let padding = String(repeating: "0", count: max(0, stateWidth - binary.count))
+            return padding + binary
+        }
+
+        let buttonList = buttons.map { formatBits($0) }.joined(separator: ", ")
+
+        return """
+            --- Machine ---
+            State:       [\(formatBits(state))]
+            Target:      [\(formatBits(targetState))]
+            Width:       \(stateWidth)
+            Buttons:     \(buttonList)
+            Joltage:     \(joltage)
+            ----------------
+            """
     }
 }
 
@@ -21,19 +39,33 @@ func loadData(from path: String) -> [Machine] {
         var machines: [Machine] = []
         for line in lines {
 
-            var targetState: [Int] = []
-            var buttons: [[Int]] = []
+            var targetState: UInt64 = 0
+            var stateWidth: Int = 0
+            var buttons: [UInt64] = []
             var joltage: [Int] = []
 
             if let lightsMatches = line.firstMatch(of: #/\[(?<lights>[.#]+)\]/#) {
-                targetState = lightsMatches.lights.map { $0 == "#" ? 1 : 0 }
+                let lightsString = lightsMatches.lights
+                stateWidth = lightsString.count
+
+                for (idx, char) in lightsString.enumerated() {
+                    if char == "#" {
+                        targetState |= (UInt64(1) << idx)
+                    }
+                }
             }
 
             let buttonMatches = line.matches(of: #/\((?<button>.+?)\)/#)
             buttons = buttonMatches.map { match in
-                String(match.button).split(separator: ",").compactMap {
-                    Int($0.trimmingCharacters(in: .whitespaces))
+                var b: UInt64 = 0
+                let digits = String(match.button).split(separator: ",")
+
+                for digit in digits {
+                    if let bitIndex = Int(digit.trimmingCharacters(in: .whitespaces)) {
+                        b |= (UInt64(1) << bitIndex)
+                    }
                 }
+                return b
             }
 
             if let joltageMatch = line.firstMatch(of: #/\{(?<joltages>.+?)\}/#) {
@@ -42,9 +74,10 @@ func loadData(from path: String) -> [Machine] {
                 }
             }
 
-            let state = Array(repeating: 0, count: targetState.count)
             machines.append(
-                Machine(targetState: targetState, state: state, buttons: buttons, joltage: joltage))
+                Machine(
+                    targetState: targetState, stateWidth: stateWidth, buttons: buttons,
+                    joltage: joltage))
         }
 
         return machines
@@ -53,31 +86,6 @@ func loadData(from path: String) -> [Machine] {
         print("ERROR: \(error.localizedDescription)")
         return []
     }
-}
-
-func updateState(currentState: [Int], button: [Int]) -> [Int] {
-    var state = currentState
-
-    for idx in button {
-        state[idx] ^= 1
-    }
-
-    return state
-}
-
-func expandButtons(machine: Machine) -> [[Int]] {
-    let width = machine.state.count
-    var buttons: [[Int]] = []
-
-    for button in machine.buttons {
-        var b = Array(repeating: 0, count: width)
-        for idx in button {
-            b[idx] = 1
-        }
-        buttons.append(b)
-    }
-
-    return buttons
 }
 
 let machines = loadData(from: "./test_input.txt")
