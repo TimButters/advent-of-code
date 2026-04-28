@@ -124,11 +124,11 @@ if __name__ == "__main__":
     max_area = max([rect_area(p1, p2) for p1, p2 in combinations(points, 2)])
     print("Part 1:", max_area)
 
-    #areas = sorted(
-    #    [(p1, p2, rect_area(p1, p2)) for p1, p2 in combinations(points, 2)],
-    #    key=lambda x: x[2],
-    #    reverse=True,
-    #)
+    areas = sorted(
+        [(p1, p2, rect_area(p1, p2)) for p1, p2 in combinations(points, 2)],
+        key=lambda x: x[2],
+        reverse=True,
+    )
 
-    #max_area = part2(areas, points)
-    #print("Part 2:", max_area)
+    max_area = part2(areas, points)
+    print("Part 2:", max_area)
